@@ -7,7 +7,7 @@
 
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../pipeline')) # add path to source code, so that Sphinx can find it
+sys.path.insert(0, os.path.abspath('..')) # add path to source code, so that Sphinx can find it
 
 project = "DSAIIS Particle Simulation"
 author = "Richard Bihlmeier, Jannis Bollien, Jochen Hartlieb, Emil Ötting"
