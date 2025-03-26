@@ -46,12 +46,28 @@
 <li class="toctree-l1 current"><a class="reference internal" href="modules.html">pipeline</a><ul class="current">
 <li class="toctree-l2 current"><a class="current reference internal" href="#">pipeline package</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#submodules">Submodules</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#pipeline-detector-module">pipeline.detector module</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#pipeline-doc-tester-module">pipeline.doc_tester module</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#pipeline-opticalflow-module">pipeline.opticalflow module</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#pipeline-shirtclassifier-module">pipeline.shirtClassifier module</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#pipeline-tracker-module">pipeline.tracker module</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#module-contents">Module contents</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-pipeline.detector">pipeline.detector module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#pipeline.detector.Detector"><code class="docutils literal notranslate"><span class="pre">Detector</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-pipeline.doc_tester">pipeline.doc_tester module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#pipeline.doc_tester.tester"><code class="docutils literal notranslate"><span class="pre">tester()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-pipeline.opticalflow">pipeline.opticalflow module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#pipeline.opticalflow.OpticalFlow"><code class="docutils literal notranslate"><span class="pre">OpticalFlow</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-pipeline.shirtClassifier">pipeline.shirtClassifier module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#pipeline.shirtClassifier.ShirtClassifier"><code class="docutils literal notranslate"><span class="pre">ShirtClassifier</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-pipeline.tracker">pipeline.tracker module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#pipeline.tracker.Filter"><code class="docutils literal notranslate"><span class="pre">Filter</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pipeline.tracker.Tracker"><code class="docutils literal notranslate"><span class="pre">Tracker</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-pipeline">Module contents</a></li>
 </ul>
 </li>
 </ul>
@@ -88,23 +104,133 @@
 <section id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
 </section>
-<section id="pipeline-detector-module">
-<h2>pipeline.detector module<a class="headerlink" href="#pipeline-detector-module" title="Link to this heading"></a></h2>
+<section id="module-pipeline.detector">
+<span id="pipeline-detector-module"></span><h2>pipeline.detector module<a class="headerlink" href="#module-pipeline.detector" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="pipeline.detector.Detector">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pipeline.detector.</span></span><span class="sig-name descname"><span class="pre">Detector</span></span><a class="reference internal" href="_modules/pipeline/detector.html#Detector"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipeline.detector.Detector" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pipeline.detector.Detector.start">
+<span class="sig-name descname"><span class="pre">start</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipeline/detector.html#Detector.start"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipeline.detector.Detector.start" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipeline.detector.Detector.step">
+<span class="sig-name descname"><span class="pre">step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipeline/detector.html#Detector.step"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipeline.detector.Detector.step" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipeline.detector.Detector.stop">
+<span class="sig-name descname"><span class="pre">stop</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipeline/detector.html#Detector.stop"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipeline.detector.Detector.stop" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
 </section>
-<section id="pipeline-doc-tester-module">
-<h2>pipeline.doc_tester module<a class="headerlink" href="#pipeline-doc-tester-module" title="Link to this heading"></a></h2>
+<section id="module-pipeline.doc_tester">
+<span id="pipeline-doc-tester-module"></span><h2>pipeline.doc_tester module<a class="headerlink" href="#module-pipeline.doc_tester" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="pipeline.doc_tester.tester">
+<span class="sig-prename descclassname"><span class="pre">pipeline.doc_tester.</span></span><span class="sig-name descname"><span class="pre">tester</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">arg_1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">arg_2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Hello'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="_modules/pipeline/doc_tester.html#tester"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipeline.doc_tester.tester" title="Link to this definition"></a></dt>
+<dd><p>Tester function for documentation purposes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>arg_1</strong> (<em>int</em><em>, </em><em>optional</em>) – An integer. Defaults to 5.</p></li>
+<li><p><strong>arg_2</strong> (<em>str</em><em>, </em><em>optional</em>) – A string. Defaults to ‘Hello’.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A numpy array containing arg_1 and arg_2.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
 </section>
-<section id="pipeline-opticalflow-module">
-<h2>pipeline.opticalflow module<a class="headerlink" href="#pipeline-opticalflow-module" title="Link to this heading"></a></h2>
+<section id="module-pipeline.opticalflow">
+<span id="pipeline-opticalflow-module"></span><h2>pipeline.opticalflow module<a class="headerlink" href="#module-pipeline.opticalflow" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="pipeline.opticalflow.OpticalFlow">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pipeline.opticalflow.</span></span><span class="sig-name descname"><span class="pre">OpticalFlow</span></span><a class="reference internal" href="_modules/pipeline/opticalflow.html#OpticalFlow"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipeline.opticalflow.OpticalFlow" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pipeline.opticalflow.OpticalFlow.start">
+<span class="sig-name descname"><span class="pre">start</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipeline/opticalflow.html#OpticalFlow.start"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipeline.opticalflow.OpticalFlow.start" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipeline.opticalflow.OpticalFlow.step">
+<span class="sig-name descname"><span class="pre">step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipeline/opticalflow.html#OpticalFlow.step"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipeline.opticalflow.OpticalFlow.step" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipeline.opticalflow.OpticalFlow.stop">
+<span class="sig-name descname"><span class="pre">stop</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipeline/opticalflow.html#OpticalFlow.stop"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipeline.opticalflow.OpticalFlow.stop" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
 </section>
-<section id="pipeline-shirtclassifier-module">
-<h2>pipeline.shirtClassifier module<a class="headerlink" href="#pipeline-shirtclassifier-module" title="Link to this heading"></a></h2>
+<section id="module-pipeline.shirtClassifier">
+<span id="pipeline-shirtclassifier-module"></span><h2>pipeline.shirtClassifier module<a class="headerlink" href="#module-pipeline.shirtClassifier" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="pipeline.shirtClassifier.ShirtClassifier">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pipeline.shirtClassifier.</span></span><span class="sig-name descname"><span class="pre">ShirtClassifier</span></span><a class="reference internal" href="_modules/pipeline/shirtClassifier.html#ShirtClassifier"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipeline.shirtClassifier.ShirtClassifier" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pipeline.shirtClassifier.ShirtClassifier.start">
+<span class="sig-name descname"><span class="pre">start</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipeline/shirtClassifier.html#ShirtClassifier.start"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipeline.shirtClassifier.ShirtClassifier.start" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipeline.shirtClassifier.ShirtClassifier.step">
+<span class="sig-name descname"><span class="pre">step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipeline/shirtClassifier.html#ShirtClassifier.step"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipeline.shirtClassifier.ShirtClassifier.step" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipeline.shirtClassifier.ShirtClassifier.stop">
+<span class="sig-name descname"><span class="pre">stop</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipeline/shirtClassifier.html#ShirtClassifier.stop"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipeline.shirtClassifier.ShirtClassifier.stop" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
 </section>
-<section id="pipeline-tracker-module">
-<h2>pipeline.tracker module<a class="headerlink" href="#pipeline-tracker-module" title="Link to this heading"></a></h2>
+<section id="module-pipeline.tracker">
+<span id="pipeline-tracker-module"></span><h2>pipeline.tracker module<a class="headerlink" href="#module-pipeline.tracker" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="pipeline.tracker.Filter">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pipeline.tracker.</span></span><span class="sig-name descname"><span class="pre">Filter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">z</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cls</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipeline/tracker.html#Filter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipeline.tracker.Filter" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pipeline.tracker.Tracker">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pipeline.tracker.</span></span><span class="sig-name descname"><span class="pre">Tracker</span></span><a class="reference internal" href="_modules/pipeline/tracker.html#Tracker"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipeline.tracker.Tracker" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pipeline.tracker.Tracker.start">
+<span class="sig-name descname"><span class="pre">start</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipeline/tracker.html#Tracker.start"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipeline.tracker.Tracker.start" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipeline.tracker.Tracker.step">
+<span class="sig-name descname"><span class="pre">step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipeline/tracker.html#Tracker.step"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipeline.tracker.Tracker.step" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipeline.tracker.Tracker.stop">
+<span class="sig-name descname"><span class="pre">stop</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipeline/tracker.html#Tracker.stop"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipeline.tracker.Tracker.stop" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
 </section>
-<section id="module-contents">
-<h2>Module contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
+<section id="module-pipeline">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-pipeline" title="Link to this heading"></a></h2>
 </section>
 </section>
 

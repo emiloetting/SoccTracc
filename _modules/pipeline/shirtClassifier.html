@@ -1,0 +1,168 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pipeline.shirtClassifier &mdash; DSAIIS Particle Simulation 0.0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=d45e8c67"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            DSAIIS Particle Simulation
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">pipeline</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../pipeline.html">pipeline package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../pipeline.html#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../pipeline.html#module-pipeline.detector">pipeline.detector module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../pipeline.html#pipeline.detector.Detector"><code class="docutils literal notranslate"><span class="pre">Detector</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../pipeline.html#module-pipeline.doc_tester">pipeline.doc_tester module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../pipeline.html#pipeline.doc_tester.tester"><code class="docutils literal notranslate"><span class="pre">tester()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../pipeline.html#module-pipeline.opticalflow">pipeline.opticalflow module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../pipeline.html#pipeline.opticalflow.OpticalFlow"><code class="docutils literal notranslate"><span class="pre">OpticalFlow</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../pipeline.html#module-pipeline.shirtClassifier">pipeline.shirtClassifier module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../pipeline.html#pipeline.shirtClassifier.ShirtClassifier"><code class="docutils literal notranslate"><span class="pre">ShirtClassifier</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../pipeline.html#module-pipeline.tracker">pipeline.tracker module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../pipeline.html#pipeline.tracker.Filter"><code class="docutils literal notranslate"><span class="pre">Filter</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../pipeline.html#pipeline.tracker.Tracker"><code class="docutils literal notranslate"><span class="pre">Tracker</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../pipeline.html#module-pipeline">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">DSAIIS Particle Simulation</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">pipeline.shirtClassifier</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pipeline.shirtClassifier</h1><div class="highlight"><pre>
+<div class="viewcode-block" id="ShirtClassifier">
+<a class="viewcode-back" href="../../pipeline.html#pipeline.shirtClassifier.ShirtClassifier">[docs]</a>
+<span></span><span class="k">class</span><span class="w"> </span><span class="nc">ShirtClassifier</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;Shirt Classifier&quot;</span> <span class="c1"># Do not change the name of the module as otherwise recording replay would break!</span>
+
+<div class="viewcode-block" id="ShirtClassifier.start">
+<a class="viewcode-back" href="../../pipeline.html#pipeline.shirtClassifier.ShirtClassifier.start">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="c1"># TODO: Implement start up procedure of the module</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="ShirtClassifier.stop">
+<a class="viewcode-back" href="../../pipeline.html#pipeline.shirtClassifier.ShirtClassifier.stop">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">stop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="c1"># TODO: Implement shut down procedure of the module</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="ShirtClassifier.step">
+<a class="viewcode-back" href="../../pipeline.html#pipeline.shirtClassifier.ShirtClassifier.step">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="c1"># TODO: Implement processing of a current frame list</span>
+        <span class="c1"># The task of the shirt classifier module is to identify the two teams based on their shirt color and to assign each player to one of the two teams</span>
+
+        <span class="c1"># Note: You can access data[&quot;image&quot;] and data[&quot;tracks&quot;] to receive the current image as well as the current track list</span>
+        <span class="c1"># You must return a dictionary with the given fields:</span>
+        <span class="c1">#       &quot;teamAColor&quot;:       A 3-tuple (B, G, R) containing the blue, green and red channel values (between 0 and 255) for team A</span>
+        <span class="c1">#       &quot;teamBColor&quot;:       A 3-tuple (B, G, R) containing the blue, green and red channel values (between 0 and 255) for team B</span>
+        <span class="c1">#       &quot;teamClasses&quot;       A list with an integer class for each track according to the following mapping:</span>
+        <span class="c1">#           0: Team not decided or not a player (e.g. ball, goal keeper, referee)</span>
+        <span class="c1">#           1: Player belongs to team A</span>
+        <span class="c1">#           2: Player belongs to team B</span>
+        <span class="k">return</span> <span class="p">{</span> <span class="s2">&quot;teamAColor&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="s2">&quot;teamBColor&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="s2">&quot;teamClasses&quot;</span><span class="p">:</span> <span class="kc">None</span> <span class="p">}</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
