@@ -9,7 +9,7 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath('..')) # add path to source code, so that Sphinx can find it
 
-project = "DSAIIS Particle Simulation"
+project = "SoccTracc's Pipeline-Modules documentation"
 author = "Richard Bihlmeier, Jannis Bollien, Jochen Hartlieb, Emil Ötting"
 copyright = "2025"
 version =  "0.0.1"
