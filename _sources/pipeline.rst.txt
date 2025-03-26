@@ -1,0 +1,45 @@
+pipeline package
+================
+
+Submodules
+----------
+
+pipeline.detector module
+------------------------
+
+.. automodule:: pipeline.detector
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pipeline.opticalflow module
+---------------------------
+
+.. automodule:: pipeline.opticalflow
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pipeline.shirtClassifier module
+-------------------------------
+
+.. automodule:: pipeline.shirtClassifier
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+pipeline.tracker module
+-----------------------
+
+.. automodule:: pipeline.tracker
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+Module contents
+---------------
+
+.. automodule:: pipeline
+   :members:
+   :show-inheritance:
+   :undoc-members:
