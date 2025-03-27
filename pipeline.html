@@ -51,6 +51,7 @@
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#module-pipeline.doc_tester">pipeline.doc_tester module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#pipeline.doc_tester.calculate_discounted_price"><code class="docutils literal notranslate"><span class="pre">calculate_discounted_price()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#pipeline.doc_tester.tester"><code class="docutils literal notranslate"><span class="pre">tester()</span></code></a></li>
 </ul>
 </li>
@@ -130,6 +131,26 @@
 </section>
 <section id="module-pipeline.doc_tester">
 <span id="pipeline-doc-tester-module"></span><h2>pipeline.doc_tester module<a class="headerlink" href="#module-pipeline.doc_tester" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="pipeline.doc_tester.calculate_discounted_price">
+<span class="sig-prename descclassname"><span class="pre">pipeline.doc_tester.</span></span><span class="sig-name descname"><span class="pre">calculate_discounted_price</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">price</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">discount_rate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="_modules/pipeline/doc_tester.html#calculate_discounted_price"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipeline.doc_tester.calculate_discounted_price" title="Link to this definition"></a></dt>
+<dd><p>TO CHECK LINTER: Calculate the discounted price given the original price and discount rate.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>price</strong> – The original price of the item.</p></li>
+<li><p><strong>discount_rate</strong> – The discount rate as a fraction (e.g., 0.2 for 20% discount).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The discounted price as a float.</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ValueError</strong> – If the price is negative.</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py function">
 <dt class="sig sig-object py" id="pipeline.doc_tester.tester">
 <span class="sig-prename descclassname"><span class="pre">pipeline.doc_tester.</span></span><span class="sig-name descname"><span class="pre">tester</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">arg_1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">arg_2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Hello'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="_modules/pipeline/doc_tester.html#tester"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipeline.doc_tester.tester" title="Link to this definition"></a></dt>

@@ -49,6 +49,7 @@
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="../../pipeline.html#module-pipeline.doc_tester">pipeline.doc_tester module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../pipeline.html#pipeline.doc_tester.calculate_discounted_price"><code class="docutils literal notranslate"><span class="pre">calculate_discounted_price()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../pipeline.html#pipeline.doc_tester.tester"><code class="docutils literal notranslate"><span class="pre">tester()</span></code></a></li>
 </ul>
 </li>
@@ -112,6 +113,28 @@
 <span class="sd">        np.ndarray: A numpy array containing arg_1 and arg_2.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">arg_1</span><span class="p">,</span> <span class="n">arg_2</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="calculate_discounted_price">
+<a class="viewcode-back" href="../../pipeline.html#pipeline.doc_tester.calculate_discounted_price">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">calculate_discounted_price</span> <span class="p">(</span> <span class="n">price</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">discount_rate</span><span class="p">:</span> <span class="nb">float</span> <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    TO CHECK LINTER: Calculate the discounted price given the original price and discount rate.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      price: The original price of the item.</span>
+<span class="sd">      discount_rate: The discount rate as a fraction (e.g., 0.2 for 20% discount).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      The discounted price as a float.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">      ValueError: If the price is negative.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span><span class="p">(</span> <span class="n">price</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="p">):</span>
+         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Price cannot be negative&quot;</span><span class="p">)</span>
+    <span class="n">discounted_price</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">price</span> <span class="o">-</span> <span class="p">(</span> <span class="n">price</span> <span class="o">*</span> <span class="n">discount_rate</span> <span class="p">)</span>
+    <span class="k">return</span> <span class="n">discounted_price</span></div>
 
     
 </pre></div>
