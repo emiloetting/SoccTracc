@@ -1,13 +1,33 @@
-name: Sphinx-Documentation
+name: CI/CD - Pipeline
 on: 
-  workflow_run: 
-    workflows: ['Linting']
-    types:
-      - completed
+  push:
+    branches: ['Sphinx_Docs']
 
 jobs:
+  Code-Linting:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+      
+      - name: Upgrade pip
+        run: python -m pip install --upgrade pip
+
+      - name: Install Code-Dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install black
+
+      - name: Indicating Problematic Code
+        run: black pipeline/ --diff --color
+
   Generating-Documentation:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    needs: Code-Linting
     runs-on: ubuntu-latest
     permissions:
       contents: write
