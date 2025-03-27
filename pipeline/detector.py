@@ -1,3 +1,8 @@
+from ultralytics import settings
+
+# Disable analytics and crash reporting
+settings.update({"sync": False})
+
 class Detector:
     def __init__(self):
         self.name = "Detector" # Do not change the name of the module as otherwise recording replay would break!
