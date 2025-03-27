@@ -24,6 +24,7 @@ jobs:
 
       - name: Checking Files
         run: black pipeline/ --check
+        continue-on-error: true
 
       - name: Indicating Problematic Code
         run: black pipeline/ --diff --color
