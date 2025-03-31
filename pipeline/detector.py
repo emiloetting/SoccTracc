@@ -1,11 +1,12 @@
-from ultralytics import settings
-
+from ultralytics import YOLO, settings
+import numpy as np
 # Disable analytics and crash reporting
 settings.update({"sync": False})
 
 class Detector:
     def __init__(self):
         self.name = "Detector" # Do not change the name of the module as otherwise recording replay would break!
+        self.model = YOLO("yolov8m-football.pt")
 
     def start(self, data):
         # TODO: Implement start up procedure of the module
@@ -16,6 +17,9 @@ class Detector:
         pass
 
     def step(self, data):
+        results = self.model(data['image'], verbose=False)
+        xywh = np.asarray(results[0].boxes.xywh)
+        classes = np.asarray(results[0].boxes.cls)
         # TODO: Implement processing of a single frame
         # The task of the detector is to detect the ball, the goal keepers, the players and the referees if visible.
         # A bounding box needs to be defined for each detected object including the objects center position (X,Y) and its width and height (W, H) 
@@ -36,6 +40,6 @@ class Detector:
         #   3: Referee
 
         return {
-            "detections": None,
-            "classes": None
+            "detections": xywh,
+            "classes": classes
         }
