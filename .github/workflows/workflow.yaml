@@ -2,9 +2,12 @@ name: CI/CD - Pipeline
 on: 
   push:
     branches: ['Sphinx_Docs']
+  pull-request:
+    branches: ['Sphinx_Docs']
 
 jobs:
   Code-Linting:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -24,10 +27,10 @@ jobs:
           pip install black
 
       - name: Indicating Problematic Code
-        run: black pipeline/ --diff --color
+        run: black pipeline/ --check --diff --color
 
   Generating-Documentation:
-    needs: Code-Linting
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:
       contents: write
