@@ -14,7 +14,7 @@ engine = Engine(
     recordReplayMultiplex(Detector(), RRPlexMode.REPLAY),
     recordReplayMultiplex(OpticalFlow(), RRPlexMode.REPLAY),
     recordReplayMultiplex(Tracker(), RRPlexMode.REPLAY),
-    recordReplayMultiplex(ShirtClassifier(), RRPlexMode.REPLAY),
+    recordReplayMultiplex(ShirtClassifier(), RRPlexMode.BYPASS),
     Display(historyBufferSize=1000)
     ],
   signals={
