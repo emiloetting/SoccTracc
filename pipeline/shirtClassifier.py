@@ -1,7 +1,14 @@
+import numpy as np
+import cv2
+
+
+
 class ShirtClassifier:
     def __init__(self):
         self.name = "Shirt Classifier" # Do not change the name of the module as otherwise recording replay would break!
-
+        self.currently_tracked_objs = []
+        self.current_frame = 0
+    
     def start(self, data):
         # TODO: Implement start up procedure of the module
         pass
@@ -22,6 +29,31 @@ class ShirtClassifier:
         #           0: Team not decided or not a player (e.g. ball, goal keeper, referee)
         #           1: Player belongs to team A
         #           2: Player belongs to team B
-        return { "teamAColor": None,
-                 "teamBColor": None,
-                 "teamClasses": None }
+        self.current_frame += 1
+        self.mean_colors = []
+        self.currently_tracked_objs = []
+        self.get_players_boxes(data)
+        for player in self.currently_tracked_objs:
+            pass
+        
+
+            
+        return { "teamAColor": (1,1,1),
+                 "teamBColor": (1,1,1),
+                 "teamClasses": [1]*len(data["tracks"]) } # TODO: Replace with actual team classes
+    
+    def get_players_boxes(self, data):
+        """Extracts all players' bounding boxes from image in data, slices players from image into np.Array"""
+        img = data['image']
+        player_boxes = data['tracks'] # is numpy array
+        
+        for idx, player_box in enumerate(player_boxes):
+            x,y,w,h = player_box
+            half_width = .5 * w
+            half_height = .5 * h
+            top_left_corner = (int(y - half_height), int(x - half_width))
+            bottom_right_corner = (int(y + half_height), int(x + half_width))
+            player = img[top_left_corner[0]:bottom_right_corner[0], top_left_corner[1]:bottom_right_corner[1]]
+            cv2.imwrite(f'.faafo/player_{idx}.jpg', player)
+            self.currently_tracked_objs.append(player)
+        return self.currently_tracked_objs
