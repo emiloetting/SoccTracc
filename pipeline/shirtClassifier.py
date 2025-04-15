@@ -61,7 +61,7 @@ class ShirtClassifier:
         # Reduce Image features by calculating mean color (BGR) of image
         for torso in self.torsos_bgr:     # whole of For-Loop WORKS AS WELL
             mean_pxl = list(np.mean(torso, axis=(0,1)).astype(int))
-            self.torso_means.append(mean_pxl)
+            self.torso_means.append(mean_pxl)   # leave as list to avoid flattening to 1D by np.append() (behaves differently for some reason)
         
         # Clear list of BGR torsos to avoid processing them twice in next step
         self.torsos_bgr = []
@@ -77,12 +77,14 @@ class ShirtClassifier:
       
             # KMEANS 
             # fitting and predicting useful to be combine
+            self.torso_means = np.array(self.torso_means)   # cast as np.array for being able to use list as index
             self.clusterer.fit_predict(self.torso_means)
 
             # Make sure labels fit required classes (1,2: teams, 0: rest): 
             # rest is expected to have least objects tracked -> least occuring label will be switched with most occuring
             # Check Label occurances
             labels = self.clusterer.labels_
+            # print('Labels uncorrected: ', labels)
             label_hist = np.bincount(labels)
 
             # Add Index to label_hist
@@ -101,7 +103,7 @@ class ShirtClassifier:
 
             # If bin 0 (label 0) has most occurances and other labels have equally many occurances
             if np.max(hist_indexed[1,:]) == hist_indexed[1,0] and hist_indexed[1,1] == hist_indexed[1,2]:
-                label += 5      # Change current labels
+                labels += 5      # Change current labels
                 hist_indexed[0] += 5    # Change label names in hist
 
                 # For there are no clear teams: label mith most appearances muts NOT be 0, further specification impossible
@@ -109,6 +111,7 @@ class ShirtClassifier:
                 labels[labels == 6] = 0      
                 labels[labels == 5] = 1
                 labels[labels == 7] = 2
+                
 
             # If label 1 hast least occurances -> make label 1 label 0 and vice versa
             elif np.min(hist_indexed[1,:]) == hist_indexed[1,1]:     
@@ -133,44 +136,47 @@ class ShirtClassifier:
                 labels[labels == 5] = 2
                 hist_indexed[0] -= 5
             
+            # print('Labels: ', labels)
             # Train classifier to predict labels of players in all coming frames
             # We choose: KNN Classification
-
             self.classifier.fit(X=self.torso_means, y=labels)
-            self.current_frame +=1 
 
             # Last step: Determine Team color
             # Goal: make them mean Torso color of mean torso colors of each team -> but lower green channel
-            a_indices = np.where(labels == 1)
+            a_indices = np.where(labels == 1)[0] # np.where() returns tuple, first value is needed
+            # print('TeamA indices: ', a_indices)
             self.team_a_colors = self.torso_means[a_indices]
             self.team_a_color = np.clip(
-                a=(np.mean(self.team_a_colors, axis=0).astype(int)) - [0,100,0],    # Mean over mean color, make sure it's int, subtract green noise
+                a=(np.mean(self.team_a_colors, axis=0).astype(int)) - [0,40,0],    # Mean over mean color, make sure it's int, subtract green noise
                 a_min=0,                                                            # Make sure after subtraction no value exceed 8bit-ins to avoid display issues
                 a_max=255)
 
-            b_indices = np.where(labels == 2)
+            b_indices = np.where(labels == 2)[0]
             self.team_b_colors = self.torso_means[b_indices]
             self.team_b_color = np.clip(
-                a=(np.mean(self.team_b_colors, axis=0).astype(int)) - [0,100,0], 
+                a=(np.mean(self.team_b_colors, axis=0).astype(int)) - [0,40,0], 
                 a_min=0, 
                 a_max=255)
         
             # Cache colors to avoid having to calculate them over and over again
             self.team_a_color = tuple(self.team_a_color.tolist())
             self.team_b_color = tuple(self.team_b_color.tolist())
+
+            self.torso_means = []   # recast to list
             
 
         elif self.current_frame >= 9:
             # After gathering the data and training the classifier:
             # images get cut and prepared (see top of method), down here: only classification happens
             self.labels_pred = self.classifier.predict(X=self.torso_means) 
+            self.torso_means = []
             
         self.currently_tracked_objs = []
         self.current_frame += 1
 
         return { "teamAColor": self.team_a_color,
                  "teamBColor": self.team_b_color,
-                 "teamClasses": self.labels_pred } 
+                 "teamClasses": list(self.labels_pred) } 
     
     def get_players_boxes(self, data):
         """Extracts all players' bounding boxes from image in data, slices players from image into np.Array"""
@@ -184,13 +190,13 @@ class ShirtClassifier:
             top_left_corner = (int(y - half_height), int(x - half_width))
             bottom_right_corner = (int(y + half_height), int(x + half_width))
             player = img[top_left_corner[0]:bottom_right_corner[0], top_left_corner[1]:bottom_right_corner[1]]
-            cv.imwrite(f'.faafo/full_players/player_{idx}.jpg', player)
+            # cv.imwrite(f'.faafo/full_players/player_{idx}.jpg', player)
             self.currently_tracked_objs.append(player)
         return self.currently_tracked_objs
     
     def torso(self, player: np.array, idx: int):
         rows = len(player)
         torso = player[:int(.5*rows),:,:]   # top half of player only interesting -> the part where shirt is
-        cv.imwrite(f'.faafo/torsos/player_{idx}.jpg', player)
+        # cv.imwrite(f'.faafo/torsos/player_{idx}.jpg', player)
         return torso
 
