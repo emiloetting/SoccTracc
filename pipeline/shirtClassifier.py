@@ -1,9 +1,8 @@
 import numpy as np
 import cv2 as cv
 import os
-import sys
 import itertools as it
-from scipy.spatial import cKDTree
+from sklearn.neighbors import KNeighborsClassifier
 from scipy.cluster.hierarchy import linkage, fcluster
 from sklearn.cluster import KMeans
 
@@ -18,9 +17,16 @@ class ShirtClassifier:
         self.torsos_bgr = []
         self.torso_means = []
         self.clusterer = None
+        self.classifier = None
+        self.labels_pred = None
+        self.team_a_colors = []
+        self.team_b_colors = []
+        self.team_a_color = None
+        self.team_b_color = None
     
     def start(self, data):
         self.clusterer = KMeans(n_clusters=3)
+        self.classifier = KNeighborsClassifier(n_jobs=-1)
 
     def stop(self, data):
         # remove faafo images, will be removed later anyways after 
@@ -57,10 +63,14 @@ class ShirtClassifier:
             mean_pxl = list(np.mean(torso, axis=(0,1)).astype(int))
             self.torso_means.append(mean_pxl)
         
-
-
         # Clear list of BGR torsos to avoid processing them twice in next step
         self.torsos_bgr = []
+
+        if self.current_frame < 8:
+            self.team_a_color = (255,255,255)   # Placeholder color until correct colors are calculated. Works due to only class 1 being pred until frame 8
+            self.team_b_color = None
+            self.labels_pred = [1]*len(data["tracks"])  # same variable but stores placeholder data until correct data is calculated (frame 8)
+            
 
         # On 4th frame: cluster all LAB-quantized torsos
         if self.current_frame == 8:    
@@ -79,27 +89,88 @@ class ShirtClassifier:
             index_array = np.arange(0,len(label_hist))
 
             # Add index_array to label hist
-            print('histogram :', label_hist)
-            print('Index Array: ', index_array)
             hist_indexed = np.vstack((index_array,label_hist))
-            print(hist_indexed)
 
+            # To correctly switch labels: 
+            # Add 5 to each index to make switch up easier and not risk messing up other labels
+            # If min(index_line) == 5: class with least objects (rest class) already labeled right -> 
+            # -> If first class (origin. 0) has least amnt label: just undo prior changes, labels in correct order, nothing to change
+
+            # IMPROVEMENT FOR LATER: USE NP.ARGMIN()
+            # Currently mentally unable to...
+
+            # If bin 0 (label 0) has most occurances and other labels have equally many occurances
+            if np.max(hist_indexed[1,:]) == hist_indexed[1,0] and hist_indexed[1,1] == hist_indexed[1,2]:
+                label += 5      # Change current labels
+                hist_indexed[0] += 5    # Change label names in hist
+
+                # For there are no clear teams: label mith most appearances muts NOT be 0, further specification impossible
+                # Label 1 (with most occurances) will be label 0 and vice versa
+                labels[labels == 6] = 0      
+                labels[labels == 5] = 1
+                labels[labels == 7] = 2
+
+            # If label 1 hast least occurances -> make label 1 label 0 and vice versa
+            elif np.min(hist_indexed[1,:]) == hist_indexed[1,1]:     
+                labels += 5     
+                hist_indexed[0] += 5    
+
+                # We know: former bin 1 of (0,1,2) has least opccurances -> should be label 0, is currently 6 (due to 5-Addition)
+                # Same process as before, seperated for chain of thought clarification / understandability
+                labels[labels == 6] = 0
+                labels[labels == 5] = 1
+                labels[labels == 7] = 2
+                hist_indexed[0] -= 5    # Change label names in hist
+            
+            # If label 2 has least occurances -> make label 2 label 0 and vice versa
+            elif np.min(hist_indexed[1,:]) == hist_indexed[1,2]:
+                labels += 5    
+                hist_indexed[0] += 5    
+
+                # We know: former bin 2 of (0,1,2) has least opccurances -> should be label 0, is currently 7 (due to 5-Addition)
+                labels[labels == 7] = 0
+                labels[labels == 6] = 1
+                labels[labels == 5] = 2
+                hist_indexed[0] -= 5
+            
+            # Train classifier to predict labels of players in all coming frames
+            # We choose: KNN Classification
+
+            self.classifier.fit(X=self.torso_means, y=labels)
             self.current_frame +=1 
 
-        elif self.current_frame == 9:
-            pass
-            
+            # Last step: Determine Team color
+            # Goal: make them mean Torso color of mean torso colors of each team -> but lower green channel
+            a_indices = np.where(labels == 1)
+            self.team_a_colors = self.torso_means[a_indices]
+            self.team_a_color = np.clip(
+                a=(np.mean(self.team_a_colors, axis=0).astype(int)) - [0,100,0],    # Mean over mean color, make sure it's int, subtract green noise
+                a_min=0,                                                            # Make sure after subtraction no value exceed 8bit-ins to avoid display issues
+                a_max=255)
+
+            b_indices = np.where(labels == 2)
+            self.team_b_colors = self.torso_means[b_indices]
+            self.team_b_color = np.clip(
+                a=(np.mean(self.team_b_colors, axis=0).astype(int)) - [0,100,0], 
+                a_min=0, 
+                a_max=255)
+        
+            # Cache colors to avoid having to calculate them over and over again
+            self.team_a_color = tuple(self.team_a_color.tolist())
+            self.team_b_color = tuple(self.team_b_color.tolist())
             
 
-
+        elif self.current_frame >= 9:
+            # After gathering the data and training the classifier:
+            # images get cut and prepared (see top of method), down here: only classification happens
+            self.labels_pred = self.classifier.predict(X=self.torso_means) 
             
-
         self.currently_tracked_objs = []
         self.current_frame += 1
 
-        return { "teamAColor": (1,1,1),
-                 "teamBColor": (1,1,1),
-                 "teamClasses": [1]*len(data["tracks"]) } # Replace with actual team classes
+        return { "teamAColor": self.team_a_color,
+                 "teamBColor": self.team_b_color,
+                 "teamClasses": self.labels_pred } 
     
     def get_players_boxes(self, data):
         """Extracts all players' bounding boxes from image in data, slices players from image into np.Array"""
@@ -117,36 +188,9 @@ class ShirtClassifier:
             self.currently_tracked_objs.append(player)
         return self.currently_tracked_objs
     
-    def get_quantized_lab(self):
-        """Qunatized LAB color space to 48 bins"""
-        l_channel = np.linspace(20, 230, num=3)
-        a_channel = np.linspace(0, 255, num=4)
-        b_channel = np.linspace(0, 255, num=4)
-        return np.array(list(it.product(l_channel, a_channel, b_channel))) # Create cartesian product
-    
     def torso(self, player: np.array, idx: int):
         rows = len(player)
         torso = player[:int(.5*rows),:,:]   # top half of player only interesting -> the part where shirt is
         cv.imwrite(f'.faafo/torsos/player_{idx}.jpg', player)
         return torso
-    
-    def prepare_color_tree(self, quantized_palette):
-        """Quantizes given color space (current implementation for LAB) and feeds colors into cKDTree"""
-        color_quantizer_tree = cKDTree(quantized_palette.astype(np.float32))
-        return color_quantizer_tree
-    
-    def quantize_colors(self, img: np.array, color_quant_tree, color_space_in_given_tree) -> np.array:
-        height, width, depth = img.shape
-        row_img = img.reshape(-1, 3).astype(np.float32)     # type conversion for tree 
-        distances, indices = color_quant_tree.query(row_img, k=[1]) # k=[1] for first-nearest neighbor
-        quantized_row_img = color_space_in_given_tree[indices]
-        reshaped_quantized = quantized_row_img.reshape(height, width, depth)
-        return reshaped_quantized.astype(np.uint8)  # convert back
-    
-    def get_relative_torso_hist(self, torso: np.array):
-        pxl_row = torso.reshape(-1,3) 
-        matches = (pxl_row[:, None, :] == self.quantized_color_space[None, :, :]).all(axis=2)    # -> bool-Array of shape (Amnt. Pxl, Amnt. Bins)
-        bin_counts = matches.sum(axis=0)    # Sum over all pxl in each bin
-        amnt_pxls = pxl_row.shape[0]
-        rlt_amnt_pxls = bin_counts/amnt_pxls    # get relative occurance to make sure different img sizes don't matter
-        return rlt_amnt_pxls
+
