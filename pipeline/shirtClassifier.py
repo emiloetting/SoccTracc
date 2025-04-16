@@ -5,6 +5,7 @@ import itertools as it
 from sklearn.neighbors import KNeighborsClassifier
 from scipy.cluster.hierarchy import linkage, fcluster
 from sklearn.cluster import KMeans
+from sklearn.linear_model import LogisticRegression
 
 cwd = os.getcwd()
 player_paths = os.path.join(cwd, ".faafo", "full_players")
@@ -29,7 +30,7 @@ class ShirtClassifier:
 
     def start(self, data):
         self.clusterer = KMeans(n_clusters=3)
-        self.classifier = KNeighborsClassifier(n_jobs=-1)
+        self.classifier = LogisticRegression(dual=False, n_jobs=-1, random_state=0,)
 
     def stop(self, data):
         # remove faafo images, will be removed later anyways after
@@ -188,9 +189,9 @@ class ShirtClassifier:
             self.team_a_color = np.clip(
                 a=(np.mean(self.team_a_colors, axis=0).astype(int))
                 * [
-                    1.5,
-                    1.2,
-                    1.5,
+                    1,
+                    1,
+                    1,
                 ],  # Mean over mean color, make sure it's int, subtract green noise
                 a_min=0,  # Make sure after subtraction no value exceed 8bit-ins to avoid display issues
                 a_max=255,
@@ -199,7 +200,7 @@ class ShirtClassifier:
             b_indices = np.where(labels == 2)[0]
             self.team_b_colors = self.torso_means[b_indices]
             self.team_b_color = np.clip(
-                a=(np.mean(self.team_b_colors, axis=0).astype(int)) * [1.5, 1.2, 1.5],
+                a=(np.mean(self.team_b_colors, axis=0).astype(int)) * [1, 1, 1],
                 a_min=0,
                 a_max=255,
             )
