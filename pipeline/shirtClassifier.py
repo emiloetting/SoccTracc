@@ -285,9 +285,9 @@ class ShirtClassifier:
         mask = np.all(pixels != [0, 0, 0], axis=1) # filter out black pixels
         filtered_pixels = pixels[mask]
         if filtered_pixels.size == 0:
-            return [60, 250, 0]
+            return [0, 250, 0]
         if np.all(filtered_pixels == 0):
-            return [60, 250, 0]
+            return [0, 250, 0]
         mean_color = np.mean(filtered_pixels, axis=0).astype(int)
 
         return mean_color.tolist()
