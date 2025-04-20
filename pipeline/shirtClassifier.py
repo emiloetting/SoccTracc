@@ -2,7 +2,7 @@ import numpy as np
 import cv2 as cv
 import os
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.cluster import KMeans
+from sklearn.cluster import AgglomerativeClustering
 
 cwd = os.getcwd()
 player_paths = os.path.join(cwd, ".faafo", "full_players")
@@ -23,8 +23,8 @@ class ShirtClassifier:
         self.team_b_color = None
 
     def start(self, data):
-        self.clusterer = KMeans(n_clusters=3, max_iter=200)
-        self.classifier = KNeighborsClassifier(n_neighbors=8, n_jobs=-1)
+        self.clusterer = AgglomerativeClustering(n_clusters=3, linkage="ward", compute_full_tree=True, metric="euclidean")
+        self.classifier = KNeighborsClassifier(n_neighbors=2, n_jobs=-1)
 
     def stop(self, data):
         # remove faafo images, will be removed later anyways after
@@ -122,8 +122,11 @@ class ShirtClassifier:
             labels = self.clusterer.labels_
             labels_remapped = self.organize_classes(labels)  
 
+            # Train KNN classifier with training data (torsos) and labels
+            self.classifier.fit(X=torso_means_reshaped, y=labels_remapped)  # Fit classifier with training data (torsos) and labels (team colors)
+
             # Use clusterer as classifier -> Prev. KNN does about same and takes longer
-            self.labels_pred = self.clusterer.predict(self.current_torsos_in_frame).tolist() # Labels for players in this frame were calculated in prev. step, however 
+            self.labels_pred = self.classifier.predict(self.current_torsos_in_frame).tolist() # Labels for players in this frame were calculated in prev. step, however 
             
             # Last step: Determine Team color
             # Will be cached, not calcutaed every frame
@@ -142,7 +145,7 @@ class ShirtClassifier:
             self.torso_means = []
             self.current_torsos_in_frame = np.array(self.current_torsos_in_frame)
         
-            self.labels_pred = (self.clusterer.predict(X=self.current_torsos_in_frame)).tolist()
+            self.labels_pred = (self.classifier.predict(X=self.current_torsos_in_frame)).tolist()
 
         self.currently_tracked_objs = []
         self.current_torsos_in_frame = []
