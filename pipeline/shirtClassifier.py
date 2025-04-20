@@ -1,11 +1,8 @@
 import numpy as np
 import cv2 as cv
 import os
-import itertools as it
 from sklearn.neighbors import KNeighborsClassifier
-from scipy.cluster.hierarchy import linkage, fcluster
 from sklearn.cluster import KMeans
-from sklearn.linear_model import LogisticRegression
 
 cwd = os.getcwd()
 player_paths = os.path.join(cwd, ".faafo", "full_players")
