@@ -28,7 +28,7 @@ class ShirtClassifier:
         self.team_b_color = None
 
     def start(self, data):
-        self.clusterer = KMeans(n_clusters=3)
+        self.clusterer = KMeans(n_clusters=3, max_iter=200)
         self.classifier = KNeighborsClassifier(n_neighbors=8, n_jobs=-1)
 
     def stop(self, data):
@@ -71,12 +71,12 @@ class ShirtClassifier:
             torso = self.torso(player=player, idx=index)
             if torso is not None:
                 current_torsos.append(torso)
-        self.torsos_bgr.extend(current_torsos)  
+        self.torsos_bgr.extend(current_torsos)  # dtype self.torsos_bgr: list[lists of np.arrays]
 
         # Reduce Image features by calculating mean color (BGR) of image
         for indx, torso in enumerate(self.torsos_bgr):
-            masked_torso = self.green_masking(torso, indx)  # Mask green pixels (pitch background)
-            mean_pxl = self.calc_mean_img_color(masked_torso)
+            masked_torso = self.green_masking(torso, indx)  # Mask green pixels (pitch background), black out green pixels
+            mean_pxl = self.calc_mean_img_color(masked_torso)   # Filters out black pixels. If all pixels are black, return [0, 250, 0] (green)
             if self.current_frame < 9:  # Collect data for training
                 self.torso_means.append(mean_pxl)  # leave as list to avoid flattening to 1D by np.append() (behaves differently for some reason)
             self.current_torsos_in_frame.append(mean_pxl)
@@ -91,16 +91,27 @@ class ShirtClassifier:
             self.labels_pred = [1] * len(data["tracks"])  # Fake-Labels until actual labels labels are calculated
 
         if self.current_frame == 8:
-            self.torso_means = np.array(self.torso_means)  # cast as np.array for being able to use list as index
-            self.clusterer.fit_predict(self.torso_means)
+            # Use the previous collected mean torso color to train classifier
+            self.torso_means = np.array(self.torso_means, dtype=np.uint8)  # cast as np.array for being able to use list as index
+            
+            # Reshape each image to 1D array (3 channels) before clustering
+            #   torso_means_reshaped = np.array([torso.reshape(-1, 3) for torso in self.torso_means])
+            # Convert to LAB color space where euclidean distance is more meaningful
+            #   lab_torso_means = cv.cvtColor(torso_means_reshaped, cv.COLOR_BGR2LAB)
+
+            # Reshape for clustering
+            #   lab_torso_means = lab_torso_means.reshape(-1, 3)
+            
+            # Build cluster 
+            self.clusterer.fit_predict(self.torso_means)    
 
             # Remap labels to 0, 1, 2 (0 = Rest, 1 = Team A, 2 = Team B)
             labels = self.clusterer.labels_
             labels_remapped = self.organize_classes(labels)  
 
-            # Fit classifier, use clustering labels in this frame to avoid unnecessary calculations
-            self.classifier.fit(X=self.torso_means, y=labels_remapped)
-            self.labels_pred = self.classifier.predict(self.current_torsos_in_frame).tolist() # Labels for players in this frame were calculated in prev. step, however 
+            # Use clusterer as classifier
+            # self.classifier.fit(X=self.torso_means, y=labels_remapped)
+            self.labels_pred = self.clusterer.predict(self.current_torsos_in_frame).tolist() # Labels for players in this frame were calculated in prev. step, however 
             
             # Last step: Determine Team color
             # Will be cached, not calcutaed every frame
@@ -118,7 +129,10 @@ class ShirtClassifier:
             # images get cut and prepared (see top of method), down here: only classification happens
             self.torso_means = []
             self.current_torsos_in_frame = np.array(self.current_torsos_in_frame)
-            self.labels_pred = (self.classifier.predict(X=self.current_torsos_in_frame)).tolist()
+            # Reshape each image to 1D array (3 channels) before clustering
+            #   current_torso_means_reshaped = np.array([torso.reshape(-1, 3) for torso in self.current_torsos_in_frame], dtype=np.uint8)
+        
+            self.labels_pred = (self.clusterer.predict(X=self.current_torsos_in_frame)).tolist()
 
         self.currently_tracked_objs = []
         self.current_torsos_in_frame = []
@@ -149,10 +163,9 @@ class ShirtClassifier:
             height, width, _ = player.shape
             if height == 0 or width == 0:
                 self.currently_tracked_objs.append(np.zeros((3,3,3), dtype=np.uint8))  # Will be ignored in calc_mean_img_color()
+                continue
             # cv.imwrite(f'.faafo/full_players/player_{idx}.jpg', player)
             self.currently_tracked_objs.append(player)
-
-        return self.currently_tracked_objs
 
     def torso(self, player: np.array, idx: int):
         rows = len(player)
@@ -267,7 +280,7 @@ class ShirtClassifier:
         """
         team_colors = self.torso_means[players_indices]
         team_color = np.clip(
-            a=(np.mean(team_colors, axis=0).astype(int)),
+            a=(np.mean(team_colors, axis=0).astype(np.uint8)),
             a_min=0,
             a_max=255,
             )
@@ -284,10 +297,9 @@ class ShirtClassifier:
         pixels = img.reshape(-1, 3) # flatten image to 2D array (rows = pixels, columns = BGR values)
         mask = np.all(pixels != [0, 0, 0], axis=1) # filter out black pixels
         filtered_pixels = pixels[mask]
-        if filtered_pixels.size == 0:
-            return [0, 250, 0]
-        if np.all(filtered_pixels == 0):
+        if not np.any(filtered_pixels != 0): # if not a single value is not 0, everythin is black
             return [0, 250, 0]
         mean_color = np.mean(filtered_pixels, axis=0).astype(int)
+
 
         return mean_color.tolist()
