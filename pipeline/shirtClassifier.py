@@ -83,7 +83,7 @@ class ShirtClassifier:
             # Make sure dtpye = np.uint8    
             masked_torso_lab = np.array(masked_torso_lab, dtype=np.uint8)
 
-            # Calculate mean color of torso image (BGR) and append to list
+            # Calculate mean color of torso image (LAB) and append to list
             mean_pxl = self.calc_mean_img_color(masked_torso_lab)   # Ignores black pxl, if only black: returns [220,  43,  210] (green in LAB space)
 
             if self.current_frame < 9:  # Collect data for training
