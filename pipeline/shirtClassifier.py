@@ -55,7 +55,7 @@ class ShirtClassifier:
         #       "teamClasses"       A list with an integer class for each track according to the following mapping:
         #           0: Team not decided or not a player (e.g. ball, goal keeper, referee)
         #           1: Player belongs to team A
-        #           2: Player belongs to team B
+        #TODO      -1: Player belongs to team B     <- was previously 2, problem lies in Display-module, expects -1 instead of 2
 
         # Get images of detected objetcs
         self.get_players_boxes(data)  # Internally updates self.currently_tracked_objs
@@ -204,7 +204,7 @@ class ShirtClassifier:
         Args:
             labels (np.array): Array of labels to be reorganized.
         Returns:
-            labels_remapped (np.array): Reorganized labels with values 0, 1, and 2.
+            labels_remapped (np.array): Reorganized labels with values 0, 1, and -1.  # Attention: -1 was previously 2
         """
         label_hist = np.bincount(labels)
 
@@ -221,7 +221,6 @@ class ShirtClassifier:
             and hist_indexed[1, 1] == hist_indexed[1, 2]
         ):
             labels += 5  # Change current labels
-            hist_indexed[0] += 5  # Change label names in hist
 
             # For there are no clear teams: label mith most appearances muts NOT be 0, further specification impossible
             # Label 1 (with most occurances) will be label 0 and vice versa
@@ -232,25 +231,21 @@ class ShirtClassifier:
         # If label 1 hast least occurances -> make label 1 label 0 and vice versa
         elif np.min(hist_indexed[1, :]) == hist_indexed[1, 1]:
             labels += 5
-            hist_indexed[0] += 5
 
             # We know: former bin 1 of (0,1,2) has least opccurances -> should be label 0, is currently 6 (due to 5-Addition)
             # Same process as before, seperated for chain of thought clarification / understandability
             labels[labels == 6] = 0
             labels[labels == 5] = 1
             labels[labels == 7] = 2
-            hist_indexed[0] -= 5  # Change label names in hist
 
         # If label 2 has least occurances -> make label 2 label 0 and vice versa
         elif np.min(hist_indexed[1, :]) == hist_indexed[1, 2]:
             labels += 5
-            hist_indexed[0] += 5
 
             # We know: former bin 2 of (0,1,2) has least opccurances -> should be label 0, is currently 7 (due to 5-Addition)
             labels[labels == 7] = 0
             labels[labels == 6] = 1
             labels[labels == 5] = 2
-            hist_indexed[0] -= 5
 
         return labels
 
