@@ -126,14 +126,18 @@ class ShirtClassifier:
             self.classifier.fit(X=torso_means_reshaped, y=labels_remapped)  # Fit classifier with training data (torsos) and labels (team colors)
 
             # Use clusterer as classifier -> Prev. KNN does about same and takes longer
-            self.labels_pred = self.classifier.predict(self.current_torsos_in_frame).tolist() # Labels for players in this frame were calculated in prev. step, however 
+            self.labels_pred = self.classifier.predict(self.current_torsos_in_frame) # Labels for players in this frame were calculated in prev. step, however 
+
+            # Fit to changed requirement of team-class 2 to be -1
+            self.labels_pred[self.labels_pred == 2] = -1
+            self.labels_pred = self.labels_pred.tolist()
             
             # Last step: Determine Team color
-            # Will be cached, not calcutaed every frame
+            # Will be cached, not calculated every frame
             a_indices = np.where(labels_remapped == 1)[0]  # np.where() returns tuple, first value is needed
             self.team_a_color = self.avg_team_color(a_indices)  # method returns color in BGR
 
-            b_indices = np.where(labels_remapped == 2)[0]
+            b_indices = np.where(labels_remapped == -1)[0]
             self.team_b_color = self.avg_team_color(b_indices)
 
             # Reset torsos for next frame
@@ -145,7 +149,11 @@ class ShirtClassifier:
             self.torso_means = []
             self.current_torsos_in_frame = np.array(self.current_torsos_in_frame)
         
-            self.labels_pred = (self.classifier.predict(X=self.current_torsos_in_frame)).tolist()
+            self.labels_pred = (self.classifier.predict(X=self.current_torsos_in_frame))
+
+            # Fit to changed requirement of team-class 2 to be -1
+            self.labels_pred[self.labels_pred == 2] = -1
+            self.labels_pred = self.labels_pred.tolist()    # inplace operation not possible for to_list()
 
         self.currently_tracked_objs = []
         self.current_torsos_in_frame = []
@@ -226,7 +234,7 @@ class ShirtClassifier:
             # Label 1 (with most occurances) will be label 0 and vice versa
             labels[labels == 6] = 0
             labels[labels == 5] = 1
-            labels[labels == 7] = 2
+            labels[labels == 7] = -1
 
         # If label 1 hast least occurances -> make label 1 label 0 and vice versa
         elif np.min(hist_indexed[1, :]) == hist_indexed[1, 1]:
@@ -236,7 +244,7 @@ class ShirtClassifier:
             # Same process as before, seperated for chain of thought clarification / understandability
             labels[labels == 6] = 0
             labels[labels == 5] = 1
-            labels[labels == 7] = 2
+            labels[labels == 7] = -1
 
         # If label 2 has least occurances -> make label 2 label 0 and vice versa
         elif np.min(hist_indexed[1, :]) == hist_indexed[1, 2]:
@@ -245,7 +253,7 @@ class ShirtClassifier:
             # We know: former bin 2 of (0,1,2) has least opccurances -> should be label 0, is currently 7 (due to 5-Addition)
             labels[labels == 7] = 0
             labels[labels == 6] = 1
-            labels[labels == 5] = 2
+            labels[labels == 5] = -1
 
         return labels
 
