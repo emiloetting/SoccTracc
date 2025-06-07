@@ -1,3 +1,4 @@
+import numpy as np
 # Note: A typical tracker design implements a dedicated filter class for keeping the individual state of each track
 # The filter class represents the current state of the track (predicted position, size, velocity) as well as additional information (track age, class, missing updates, etc..)
 # The filter class is also responsible for assigning a unique ID to each newly formed track
@@ -7,11 +8,42 @@ class Filter:
         pass
         
     # TODO: Implement remaining funtionality for an individual track
+
+
+class Kalm:
+    def __init__(self, F, B, H, Q, R, x0, P0):
+        self.F: np.ndarray = F
+        self.H: np.ndarray = H
+        self.R: np.ndarray = R # unsicherheit
+        self.Q: np.ndarray = Q
+        self.x: np.ndarray = x0
+        self.P: np.ndarray = P0
+        self.B: np.ndarray = B
+        self.I = np.eye(self.P.shape[0])
     
+    
+    def predict(self, u):
+        self.x = np.dot(self.F,self.x)+ np.dot(self.B, u)
+        self.P = np.dot(np.dot(self.F,self.P),self.F.T)+self.Q
+        return self.x
+       
+        
+    def update(self,z):
+        y = z - np.dot(self.H, self.x)
+        S = np.dot(np.dot(self.H,self.P),self.H.T)+self.R
+        K = np.dot(np.dot(self.P,self.H.T),np.linalg.inv(S))
+        self.x = self.x+np.dot(K,y)
+        self.P = np.dot((self.I - np.dot(K,self.H)),self.P)
+        return self.x  
     
 class Tracker:
     def __init__(self):
         self.name = "Tracker" # Do not change the name of the module as otherwise recording replay would break!
+        self.tracks: list = []
+        self.detections =  None
+        self.classes = None
+        
+        
 
     def start(self, data):
         # TODO: Implement start up procedure of the module
@@ -22,11 +54,19 @@ class Tracker:
         pass
 
     def step(self, data):
+        self.detections = data['detections']
+        self.classes = data['classes']
+        
+        print(self.detections)
+        print(self.classes)
+        
         # TODO: Implement processing of a detection list
         # The task of the tracker module is to identify (temporal) consistent tracks out of the given list of detections
         # The tracker maintains a list of known tracks which is initially empty. 
+        
         # The tracker then tries to associate all given detections from the detector to existing tracks. A meaningful metric needs to be defined
         # to decide which detection should be associated with each track and which detections better stay unassigned.
+        
         # After the association step, one must handle there different cases:
         #   1) Detections which have not beed associated with a track: For these, create a new filter class and initialize its state based on the detection 
         #   2) Tracks which have a detection: The state of these can be updated based on the associated detection
