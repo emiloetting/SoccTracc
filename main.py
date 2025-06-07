@@ -12,8 +12,8 @@ engine = Engine(
   modules=[
     VideoReader(targetSize=shape),
     recordReplayMultiplex(Detector(), RRPlexMode.REPLAY),
-    recordReplayMultiplex(OpticalFlow(), RRPlexMode.BYPASS),
-    recordReplayMultiplex(Tracker(), RRPlexMode.REPLAY),
+    recordReplayMultiplex(OpticalFlow(), RRPlexMode.REPLAY),
+    recordReplayMultiplex(Tracker(), RRPlexMode.BYPASS),
     recordReplayMultiplex(ShirtClassifier(), RRPlexMode.REPLAY),
     Display(historyBufferSize=1000)
     ],
