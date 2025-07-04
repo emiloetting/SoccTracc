@@ -7,10 +7,9 @@ from scipy.optimize import linear_sum_assignment
 class Filter:
     """
     Filter class that implements a Kalman filter for tracking
-    State vector: [x, y, w, h, vx, vy] - Position, Size, Velocity
     """
     
-    # Class variable for unique IDs - starts at 0
+    # unique ID for every track
     _id_counter = -1
     def __init__(self, z, cls):
         """
