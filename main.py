@@ -11,10 +11,10 @@ shape = (960, 540)
 engine = Engine(
   modules=[
     VideoReader(targetSize=shape),
-    recordReplayMultiplex(Detector(), RRPlexMode.REPLAY),
+    recordReplayMultiplex(Detector(), RRPlexMode.BYPASS),
     recordReplayMultiplex(OpticalFlow(), RRPlexMode.REPLAY),
     recordReplayMultiplex(Tracker(), RRPlexMode.BYPASS),
-    recordReplayMultiplex(ShirtClassifier(), RRPlexMode.REPLAY),
+    recordReplayMultiplex(ShirtClassifier(), RRPlexMode.BYPASS),
     Display(historyBufferSize=1000)
     ],
   signals={
