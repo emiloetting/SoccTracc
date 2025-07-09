@@ -1,7 +1,7 @@
 import numpy as np
 import cv2 as cv
 import os
-from sklearn.neighbors import KNeighborsClassifier
+from sklearn.neighbors import NearestCentroid
 from sklearn.cluster import AgglomerativeClustering
 
 cwd = os.getcwd()
@@ -24,7 +24,7 @@ class ShirtClassifier:
 
     def start(self, data):
         self.clusterer = AgglomerativeClustering(n_clusters=3, linkage="ward", compute_full_tree=True, metric="euclidean")
-        self.classifier = KNeighborsClassifier(n_neighbors=2, n_jobs=-1)
+        self.classifier = NearestCentroid()
 
     def stop(self, data):
         # remove faafo images, will be removed later anyways after
