@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.optimize import linear_sum_assignment
+from itertools import combinations
 # Note: A typical tracker design implements a dedicated filter class for keeping the individual state of each track
 # The filter class represents the current state of the track (predicted position, size, velocity) as well as additional information (track age, class, missing updates, etc..)
 # The filter class is also responsible for assigning a unique ID to each newly formed track
@@ -99,6 +100,7 @@ class Filter:
         self.hits += 1
         self.time_since_update = 0
 
+    
     def get_state(self):
         """
         Current state: [x, y, w, h]
@@ -118,18 +120,16 @@ class Filter:
         """
         return self.time_since_update > max_age
     
-    def is_confirmed(self, min_hits=3):
+    def is_valid(self, min_hits=3):
         """
         Is the track confirmed (enough hits)?
         """
-        return self.hits >= min_hits
+        return self.hits >= min_hits and self.time_since_update == 0
     
 class Tracker:
     def __init__(self):
         self.name = "Tracker"  # Do not change the name of the module as otherwise recording replay would break!
-        self.tracks: list = []
-        self.detections = None
-        self.classes = None
+        self.filters: list[Filter] = []
         
         self.max_disappeared = 30  
         self.min_hits = 3         # minimum hits to confirm a track
@@ -145,206 +145,127 @@ class Tracker:
         """
         Stop tracker
         """
-        self.tracks = []
+        self.filters = []
 
     def step(self, data):
         """
         Main processing step for tracker
         """
-        self.detections = data.get('detections', [])
-        self.classes = data.get('classes', [])
-        
-        detections = self.detections
-        classes = self.classes
-        
+        detections = data.get('detections', [])
+        classes = data.get('classes', [])
+
         if len(detections) == 0:
             detections = np.empty((0, 4))
         else:
             detections = np.array(detections)
         
         # Predict tracks
-        for track in self.tracks:
-            track.predict()
-        
-        # Associate detections to tracks
-        if len(detections) > 0 and len(self.tracks) > 0:
-            matches, unmatched_dets, unmatched_trks = self.associate_detections_to_tracks(
-                detections, self.tracks, classes
-            )
-        else:
-            matches = []
-            unmatched_dets = list(range(len(detections)))
-            unmatched_trks = list(range(len(self.tracks)))
-        
-        # Update matched tracks
-        for det_idx, trk_idx in matches:
-            self.tracks[trk_idx].update(detections[det_idx])
-        
-        # Create new tracks for unmatched detections
-        # TODO check if necessary/ better option for unmatched detections than creating new tracks
-        for det_idx in unmatched_dets:
-            if det_idx < len(classes):
-                cls = classes[det_idx]
-            else:
-                cls = 2  # Default: Player
+        for filter in list(self.filters):
+            filter.predict()
+            # Delete old tracks
+            if filter.should_be_deleted():
+                self.filters.remove(filter)
             
-            new_track = Filter(detections[det_idx], cls)
-            self.tracks.append(new_track)
-        
-        # Delete old tracks
-        self.tracks = [t for t in self.tracks if not t.should_be_deleted(self.max_disappeared)]
+        # Associate detections to tracks
+        tracks = self.associate_detections_to_tracks(detections, self.filters, classes)
+
+        # TODO check if necessary/ better option for unmatched detections than creating new tracks
+        for detection, track in enumerate(tracks):
+            if track is None: #sentinels that no match was found
+                filter = Filter(detections[detection], classes[detection])
+                self.filters.append(filter)
+            else:
+                self.filters[track].update(detections[detection]) # feed the filter the bounding box
 
         # Return results
         return self.format_output()
     
-    def associate_detections_to_tracks(self, detections, tracks, classes):
+    def associate_detections_to_tracks(self, detections, filters, classes):
         """
         Associate detections to tracks based on Hungarian Algorithm
         """
-
-        # if no tracks: no matches, all detections unmatched, no unmatched tracks
-        if len(tracks) == 0:
-            return [], list(range(len(detections))), []
+        matches = np.full(len(detections), None)
+        # if no tracks: no matches, all detections unmatched
+        if not filters or len(detections) == 0:
+            return matches
         
-        cost_matrix = self.calculate_cost_matrix(detections, tracks, classes)
+        cost_matrix = self.calculate_cost_matrix(detections, filters, classes)
         
         # Hungarian Algorithm 
-        if cost_matrix.size > 0:
-            row_indices, col_indices = linear_sum_assignment(cost_matrix)
-            
-            # Only assign detections to tracks if the IoU is above the threshold
-            matches = []
-            for row, col in zip(row_indices, col_indices):
-                if cost_matrix[row, col] <= 1.0 - self.iou_threshold:
-                    matches.append([row, col])
-            
-            # Find unmatched detections and tracks
-            unmatched_detections = []
-            for d in range(len(detections)):
-                if d not in [m[0] for m in matches]:
-                    unmatched_detections.append(d)
-            
-            unmatched_tracks = []
-            for t in range(len(tracks)):
-                if t not in [m[1] for m in matches]:
-                    unmatched_tracks.append(t)
-        else:
-            matches = []
-            unmatched_detections = list(range(len(detections)))
-            unmatched_tracks = list(range(len(tracks)))
+        if cost_matrix.size == 0:
+            return matches
         
-        return matches, unmatched_detections, unmatched_tracks
+        detections, tracks = linear_sum_assignment(cost_matrix)
+        
+        valid = cost_matrix[detections, tracks] <= 1.0 - self.iou_threshold
+        matches[detections[valid]] = tracks[valid]
+
+        return matches
     
     def calculate_cost_matrix(self, detections, tracks, classes):
         """
         Calculate cost matrix for association between detections and tracks
         """
-        cost_matrix = np.zeros((len(detections), len(tracks)))
-        
-        for d, detection in enumerate(detections):
-            for t, track in enumerate(tracks):
-                # IoU costs
-                iou = self.calculate_iou(detection, track.get_state())
-                iou_cost = 1.0 - iou
-                
-                # Class costs: 1000 if classes don't match
-                det_class = classes[d] 
-                if det_class == track.class_id:
-                    class_cost = 0.0
-                else:
-                    class_cost = 1000.0
-                
-                # Total cost
-                cost_matrix[d, t] = iou_cost + class_cost
-        
+        # Convert to arrays
+        trk_states = np.array([t.get_state() for t in tracks])  # shape: (T, 4)
+
+        # Detection box corners
+        x1_min = detections[:, 0] - detections[:, 2] / 2
+        y1_min = detections[:, 1] - detections[:, 3] / 2
+        x1_max = detections[:, 0] + detections[:, 2] / 2
+        y1_max = detections[:, 1] + detections[:, 3] / 2
+
+        # Track box corners
+        x2_min = trk_states[:, 0] - trk_states[:, 2] / 2
+        y2_min = trk_states[:, 1] - trk_states[:, 3] / 2
+        x2_max = trk_states[:, 0] + trk_states[:, 2] / 2
+        y2_max = trk_states[:, 1] + trk_states[:, 3] / 2
+
+        # Pairwise intersection
+        inter_x_min = np.maximum(x1_min[:, None], x2_min[None, :])
+        inter_y_min = np.maximum(y1_min[:, None], y2_min[None, :])
+        inter_x_max = np.minimum(x1_max[:, None], x2_max[None, :])
+        inter_y_max = np.minimum(y1_max[:, None], y2_max[None, :])
+        inter_w = np.maximum(0.0, inter_x_max - inter_x_min)
+        inter_h = np.maximum(0.0, inter_y_max - inter_y_min)
+        inter_area = inter_w * inter_h                           # shape: (D, T)
+
+        # Union areas
+        area_det = detections[:, 2] * detections[:, 3]                       # (D,)
+        area_trk = trk_states[:, 2] * trk_states[:, 3]           # (T,)
+        union = area_det[:, None] + area_trk[None, :] - inter_area
+        iou = np.where(union > 0, inter_area / union, 0.0)        # (D, T)
+
+        # IoU cost
+        iou_cost = 1.0 - iou
+
+        # Class-mismatch cost
+        det_cls = np.array(classes)[:, None]                     # (D, 1)
+        trk_cls = np.array([t.class_id for t in tracks])[None, :]# (1, T)
+        class_cost = np.where(det_cls == trk_cls, 0.0, 1000.0)    # (D, T)
+
+        # Combined cost matrix
+        cost_matrix = iou_cost + class_cost
         return cost_matrix
-    
-    def calculate_iou(self, box1, box2):
-        """
-        Calculate intersection over union for two boxes
-        """
-        # Box1 coordinates
-        x1_min = box1[0] - box1[2] / 2
-        y1_min = box1[1] - box1[3] / 2
-        x1_max = box1[0] + box1[2] / 2
-        y1_max = box1[1] + box1[3] / 2
-        
-        # Box2 coordinates
-        x2_min = box2[0] - box2[2] / 2
-        y2_min = box2[1] - box2[3] / 2
-        x2_max = box2[0] + box2[2] / 2
-        y2_max = box2[1] + box2[3] / 2
-        
-        # Calculate intersection
-        inter_x_min = max(x1_min, x2_min)
-        inter_y_min = max(y1_min, y2_min)
-        inter_x_max = min(x1_max, x2_max)
-        inter_y_max = min(y1_max, y2_max)
-        
-        if inter_x_max <= inter_x_min or inter_y_max <= inter_y_min:
-            return 0.0
-        
-        inter_area = (inter_x_max - inter_x_min) * (inter_y_max - inter_y_min)
-        
-        # Calculate union
-        box1_area = box1[2] * box1[3]
-        box2_area = box2[2] * box2[3]
-        union_area = box1_area + box2_area - inter_area
-        
-        if union_area <= 0:
-            return 0.0
-        
-        return inter_area / union_area
     
     def format_output(self):
         """
         create output dictionary
-        """
-        if len(self.tracks) == 0:
-            return {
-                "tracks": np.empty((0, 4)),
-                "trackVelocities": np.empty((0, 2)),
-                "trackAge": [],
-                "trackClasses": [],
-                "trackIds": [],
-            }
+        """ 
+        trackInfo = np.full((len(self.filters), 9), None)
         
-        
-        confirmed_tracks = []
-
-        for t in self.tracks:
-            if t.is_confirmed(self.min_hits) and t.time_since_update == 0:
-                confirmed_tracks.append(t)
-
-        if len(confirmed_tracks) == 0:
-            return {
-                "tracks": np.empty((0, 4)),
-                "trackVelocities": np.empty((0, 2)),
-                "trackAge": [],
-                "trackClasses": [],
-                "trackIds": [],
-            }
-        
-        tracks_list = []
-        velocities_list = []
-        ages = []
-        classes = []
-        ids = []
-
-        for t in confirmed_tracks:
-            tracks_list.append(t.get_state())
-            velocities_list.append(t.get_velocity())
-            ages.append(int(t.age))
-            classes.append(int(t.class_id))
-            ids.append(t.track_id)
-
-        tracks = np.array(tracks_list)
-        velocities = np.array(velocities_list)
-
+        for idx, filter in enumerate(self.filters):
+            if filter.is_valid(self.min_hits): # bei mehr als 5 hits und wenn es genau in unserem step geupdated
+                trackInfo[idx, 0:6] = filter.x
+                trackInfo[idx, 6] = filter.age
+                trackInfo[idx, 7] = filter.class_id
+                trackInfo[idx, 8] = filter.track_id
+                
+        validTracks = trackInfo[trackInfo[:, 8] != None]
         return {
-            "tracks": tracks,
-            "trackVelocities": velocities,
-            "trackAge": ages,
-            "trackClasses": classes,
-            "trackIds": ids
+            "tracks":           validTracks[:, 0:4],
+            "trackVelocities":  validTracks[:, 4:6],
+            "trackAge":         validTracks[:, 6].tolist(),
+            "trackClasses":     validTracks[:, 7].tolist(),
+            "trackIds":         validTracks[:, 8].tolist()
         }
