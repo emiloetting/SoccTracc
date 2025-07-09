@@ -8,6 +8,7 @@ cwd = os.getcwd()
 player_paths = os.path.join(cwd, ".faafo", "full_players")
 torso_paths = os.path.join(cwd, ".faafo", "torsos")
 masked_torso_paths = os.path.join(cwd, ".faafo", "masked_torsos")
+avg_player_paths = os.path.join(cwd, ".faafo", "mean_colors")
 class ShirtClassifier:
     def __init__(self):
         self.name = "Shirt Classifier"  # Do not change the name of the module as otherwise recording replay would break!
@@ -37,11 +38,17 @@ class ShirtClassifier:
         masked_torsos = [
             os.path.join(masked_torso_paths, file) for file in os.listdir(masked_torso_paths)
         ]
+        avg_players = [
+             os.path.join(avg_player_paths, file) for file in os.listdir(avg_player_paths)
+        ]
+
         for file_path in player_files:
             os.remove(file_path)
         for file_path in torso_files:
             os.remove(file_path)
         for file_path in masked_torsos:
+            os.remove(file_path)
+        for file_path in avg_players:
             os.remove(file_path)
 
     def step(self, data):
@@ -56,6 +63,9 @@ class ShirtClassifier:
         #           0: Team not decided or not a player (e.g. ball, goal keeper, referee)
         #           1: Player belongs to team A
         #           2: Player belongs to team B
+
+        # FOR DEBUG
+        self.stop(data=data)
 
         # Get images of detected objetcs
         self.get_players_boxes(data)  # Internally updates self.currently_tracked_objs
@@ -72,7 +82,7 @@ class ShirtClassifier:
         self.torsos_bgr.extend(current_torsos)  # dtype self.torsos_bgr: list[lists of np.arrays]
 
         # Reduce Image features by calculating mean color (BGR) of image
-        for indx, torso in enumerate(self.torsos_bgr):
+        for indx, torso in enumerate(current_torsos):
 
             # Mask green pixels (pitch background), black out green pixels
             masked_torso = self.green_masking(torso, indx)  
@@ -84,7 +94,7 @@ class ShirtClassifier:
             masked_torso_lab = np.array(masked_torso_lab, dtype=np.uint8)
 
             # Calculate mean color of torso image (LAB) and append to list
-            mean_pxl = self.calc_mean_img_color(masked_torso_lab)   # Ignores black pxl, if only black: returns [220,  43,  210] (green in LAB space)
+            mean_pxl = self.calc_mean_img_color(masked_torso_lab, idx=indx)   # Ignores black pxl, if only black: returns [220,  43,  210] (green in LAB space)
 
             if self.current_frame < 9:  # Collect data for training
                 self.torso_means.append(mean_pxl)  # leave as list to avoid flattening to 1D by np.append() (behaves differently for some reason)
@@ -144,6 +154,7 @@ class ShirtClassifier:
         
             self.labels_pred = (self.clusterer.predict(X=self.current_torsos_in_frame)).tolist()
 
+        
         self.currently_tracked_objs = []
         self.current_torsos_in_frame = []
         self.current_frame += 1
@@ -174,7 +185,7 @@ class ShirtClassifier:
             if height == 0 or width == 0:
                 self.currently_tracked_objs.append(np.zeros((3,3,3), dtype=np.uint8))  # Will be ignored in calc_mean_img_color()
                 continue
-            # cv.imwrite(f'.faafo/full_players/player_{idx}.jpg', player)
+            cv.imwrite(f'.faafo/full_players/player_{idx}_bounding_box.jpg', player)
             self.currently_tracked_objs.append(player)
 
     def torso(self, player: np.array, idx: int):
@@ -182,7 +193,7 @@ class ShirtClassifier:
         # top half of player only interesting -> the part where shirt is
         torso = player[:int(np.ceil(0.5 *rows)), :, :]  
         # top half of player only interesting -> the part where shirt is
-        # cv.imwrite(f'.faafo/torsos/player_{idx}.jpg', torso)
+        # cv.imwrite(f'.faafo/torsos/player_{idx}_torso.jpg', torso)
         if torso.size == 0:
             return np.zeros((3,3,3), dtype=np.uint8) # Will be ignored in calc_mean_img_color()
         return torso
@@ -277,7 +288,7 @@ class ShirtClassifier:
         green_cleansed_img = cv.bitwise_and(bgr_img, bgr_img, mask=mask_inv)
         
         # Safe masked image for debugging purposes
-        #cv.imwrite(f'.faafo/masked_torsos/player_{idx}_masked.jpg', green_cleansed_img)
+        # cv.imwrite(f'.faafo/masked_torsos/player_{idx}_torso_masked.jpg', green_cleansed_img)
 
         return green_cleansed_img
     
@@ -302,7 +313,7 @@ class ShirtClassifier:
 
         return tuple(team_color)
     
-    def calc_mean_img_color(self, img: np.array) -> tuple:
+    def calc_mean_img_color(self, img: np.array, idx: int) -> tuple:
         """Calculates the mean color of an image. Ignores completely black pixels -> are caused by green masking and should not be considered for color calculation.
         Args:
             img (np.array): Input image.
@@ -320,6 +331,10 @@ class ShirtClassifier:
 
         # If no 'colored' pixel to be be collected: return green in LAB
         if not np.any(filtered_pixels != 0): 
+            # pixel = np.zeros((1, 1, 3), dtype=np.uint8)
+            # pixel[0, 0] = [220,  43,  210]    # for openCV to understand it as singular pixel 
+            # pixel = cv.cvtColor(pixel, cv.COLOR_LAB2BGR)
+            # cv.imwrite(f'.faafo/mean_colors/player_{idx}_mean_clr.jpg', pixel)
             return [220,  43,  210] 
         
         # Calculate mean pixel color as float, ensure correct dtype
@@ -327,6 +342,12 @@ class ShirtClassifier:
 
         # Convert from float back to int
         mean_color = np.clip(mean_color, 0, 255).astype(np.uint8)
+
+        # Safe masked image for debugging purposes
+        # pixel = np.zeros((1, 1, 3), dtype=np.uint8)
+        # pixel[0, 0] = mean_color
+        # pixel = cv.cvtColor(pixel, cv.COLOR_LAB2BGR)    # for openCV to understand it as singular pixel 
+        # cv.imwrite(f'.faafo/mean_colors/player_{idx}_mean_clr.jpg', pixel)
 
         # Return as list for compatibility with other methods
         return mean_color.tolist()
