@@ -94,7 +94,7 @@ class ShirtClassifier:
             x1, y1, x2, y2 = int(x-w/2), int(y-h/4), int(x+w/2), int(y) #just take y as min height because torso
             cutout = img[y1:y2, x1:x2, ...]
             # cv.imwrite(f"box-{uuid4().hex[0:5]}.png", cutout)
-            if cutout.size == 0: player_imgs.append(None)
+            if cutout.size == 0: player_imgs.append(np.empty(0))
             else: player_imgs.append(cutout)
         return player_imgs
     
