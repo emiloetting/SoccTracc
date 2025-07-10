@@ -167,13 +167,15 @@ class Tracker:
                 self.filters.remove(filter)
             
         # Associate detections to tracks
-        tracks = self.associate_detections_to_tracks(detections, self.filters, classes)
+        matches = self.associate_detections_to_tracks(detections, self.filters, classes)
 
         # TODO check if necessary/ better option for unmatched detections than creating new tracks
-        for detection, track in enumerate(tracks):
+        for detection, track in matches:
             if track is None: #sentinels that no match was found
                 filter = Filter(detections[detection], classes[detection])
                 self.filters.append(filter)
+            elif detection is None:
+                self.filters[track].predict()
             else:
                 self.filters[track].update(detections[detection]) # feed the filter the bounding box
 
@@ -184,21 +186,34 @@ class Tracker:
         """
         Associate detections to tracks based on Hungarian Algorithm
         """
-        matches = np.full(len(detections), None)
+        # matches = np.full(len(detections), None)
         # if no tracks: no matches, all detections unmatched
+        
         if not filters or len(detections) == 0:
-            return matches
+            matches = np.full((len(detections), 2), None)
+            matches[:,0] = np.arange(len(detections))
+            return matches 
         
         cost_matrix = self.calculate_cost_matrix(detections, filters, classes)
         
-        # Hungarian Algorithm 
-        if cost_matrix.size == 0:
-            return matches
+        _detections, _tracks = linear_sum_assignment(cost_matrix)
         
-        detections, tracks = linear_sum_assignment(cost_matrix)
+        valid = cost_matrix[_detections, _tracks] <= 1.0 - self.iou_threshold
         
-        valid = cost_matrix[detections, tracks] <= 1.0 - self.iou_threshold
-        matches[detections[valid]] = tracks[valid]
+        valid_detections = _detections[valid]
+        valid_tracks = _tracks[valid]
+
+        d_indx = np.arange(len(detections))
+        f_indx = np.arange(len(filters))
+        unmatched_detections = np.setdiff1d(d_indx, valid_detections)
+        unmatched_tracks=np.setdiff1d(f_indx, valid_tracks)
+
+        matches = np.full((len(valid_tracks)+len(unmatched_detections)+len(unmatched_tracks), 2), None)
+        matches[d_indx, 0] = d_indx
+        matches[_detections[valid], 1] = _tracks[valid]
+        
+        matches[len(valid_detections):len(valid_detections)+len(unmatched_detections), 0] = unmatched_detections
+        matches[len(valid_detections)+len(unmatched_detections):, 1] = unmatched_tracks
 
         return matches
     
