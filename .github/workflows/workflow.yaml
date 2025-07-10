@@ -1,7 +1,10 @@
 name: CI/CD - Pipeline
 on: 
   push:
-    branches: ['Sphinx_Docs']
+    branches: ['Sphinx_Docs', 'main']
+  
+  pull_request: 
+    branches: ['main']
 
 jobs:
   Code-Linting:
@@ -23,8 +26,8 @@ jobs:
           pip install -r requirements.txt
           pip install black
 
-      - name: Indicating Problematic Code
-        run: black pipeline/ --diff --color
+      - name: Lint with Black
+        run: black pipeline/ --check
 
   Generating-Documentation:
     needs: Code-Linting
