@@ -102,7 +102,7 @@
 <a class="viewcode-back" href="../../pipeline.html#pipeline.opticalflow.OpticalFlow">[docs]</a>
 <span></span><span class="k">class</span><span class="w"> </span><span class="nc">OpticalFlow</span><span class="p">:</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;Optical Flow&quot;</span> <span class="c1"># Do not change the name of the module as otherwise recording replay would break!</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;Optical Flow&quot;</span>  <span class="c1"># Do not change the name of the module as otherwise recording replay would break!</span>
 
 <div class="viewcode-block" id="OpticalFlow.start">
 <a class="viewcode-back" href="../../pipeline.html#pipeline.opticalflow.OpticalFlow.start">[docs]</a>
@@ -122,18 +122,15 @@
 <a class="viewcode-back" href="../../pipeline.html#pipeline.opticalflow.OpticalFlow.step">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
         <span class="c1"># TODO: Implement processing of a single frame</span>
-        <span class="c1"># The task of the optical flow module is to determine the overall avergae pixel shift between this and the previous image. </span>
-        <span class="c1"># You </span>
+        <span class="c1"># The task of the optical flow module is to determine the overall avergae pixel shift between this and the previous image.</span>
+        <span class="c1"># You</span>
 
         <span class="c1"># Note: You can access data[&quot;image&quot;] to receive the current image</span>
         <span class="c1"># Return a dictionary with the motion vector between this and the last frame</span>
         <span class="c1">#</span>
         <span class="c1"># The &quot;opticalFlow&quot; signal must contain a 1x2 NumPy Array with the X and Y shift (delta values in pixels) of the image motion vector</span>
-        <span class="k">return</span> <span class="p">{</span>
-           <span class="s2">&quot;opticalFlow&quot;</span><span class="p">:</span> <span class="kc">None</span>
-        <span class="p">}</span></div>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;opticalFlow&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">}</span></div>
 </div>
-
 
 </pre></div>
 

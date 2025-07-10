@@ -100,24 +100,26 @@
   <h1>Source code for pipeline.doc_tester</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
+
 <div class="viewcode-block" id="tester">
 <a class="viewcode-back" href="../../pipeline.html#pipeline.doc_tester.tester">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">tester</span><span class="p">(</span><span class="n">arg_1</span><span class="p">:</span> <span class="nb">int</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">arg_2</span><span class="p">:</span> <span class="nb">str</span><span class="o">=</span><span class="s1">&#39;Hello&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">tester</span><span class="p">(</span><span class="n">arg_1</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span> <span class="n">arg_2</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;Hello&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Tester function for documentation purposes.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        arg_1 (int, optional): An integer. Defaults to 5.</span>
 <span class="sd">        arg_2 (str, optional): A string. Defaults to &#39;Hello&#39;.</span>
-<span class="sd">    </span>
+
 <span class="sd">    Returns:</span>
 <span class="sd">        np.ndarray: A numpy array containing arg_1 and arg_2.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">arg_1</span><span class="p">,</span> <span class="n">arg_2</span><span class="p">])</span></div>
 
 
+
 <div class="viewcode-block" id="calculate_discounted_price">
 <a class="viewcode-back" href="../../pipeline.html#pipeline.doc_tester.calculate_discounted_price">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">calculate_discounted_price</span> <span class="p">(</span> <span class="n">price</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">discount_rate</span><span class="p">:</span> <span class="nb">float</span> <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">calculate_discounted_price</span><span class="p">(</span><span class="n">price</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">discount_rate</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    TO CHECK LINTER: Calculate the discounted price given the original price and discount rate.</span>
 
@@ -131,12 +133,11 @@
 <span class="sd">    Raises:</span>
 <span class="sd">      ValueError: If the price is negative.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span><span class="p">(</span> <span class="n">price</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="p">):</span>
-         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Price cannot be negative&quot;</span><span class="p">)</span>
-    <span class="n">discounted_price</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">price</span> <span class="o">-</span> <span class="p">(</span> <span class="n">price</span> <span class="o">*</span> <span class="n">discount_rate</span> <span class="p">)</span>
+    <span class="k">if</span> <span class="n">price</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Price cannot be negative&quot;</span><span class="p">)</span>
+    <span class="n">discounted_price</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">price</span> <span class="o">-</span> <span class="p">(</span><span class="n">price</span> <span class="o">*</span> <span class="n">discount_rate</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">discounted_price</span></div>
 
-    
 </pre></div>
 
            </div>

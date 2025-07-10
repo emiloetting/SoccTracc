@@ -108,15 +108,15 @@
         <span class="c1"># TODO: Implement filter initializstion</span>
         <span class="k">pass</span></div>
 
-        
+
     <span class="c1"># TODO: Implement remaining funtionality for an individual track</span>
-    
-    
+
+
 <div class="viewcode-block" id="Tracker">
 <a class="viewcode-back" href="../../pipeline.html#pipeline.tracker.Tracker">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">Tracker</span><span class="p">:</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;Tracker&quot;</span> <span class="c1"># Do not change the name of the module as otherwise recording replay would break!</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;Tracker&quot;</span>  <span class="c1"># Do not change the name of the module as otherwise recording replay would break!</span>
 
 <div class="viewcode-block" id="Tracker.start">
 <a class="viewcode-back" href="../../pipeline.html#pipeline.tracker.Tracker.start">[docs]</a>
@@ -137,37 +137,36 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
         <span class="c1"># TODO: Implement processing of a detection list</span>
         <span class="c1"># The task of the tracker module is to identify (temporal) consistent tracks out of the given list of detections</span>
-        <span class="c1"># The tracker maintains a list of known tracks which is initially empty. </span>
+        <span class="c1"># The tracker maintains a list of known tracks which is initially empty.</span>
         <span class="c1"># The tracker then tries to associate all given detections from the detector to existing tracks. A meaningful metric needs to be defined</span>
         <span class="c1"># to decide which detection should be associated with each track and which detections better stay unassigned.</span>
         <span class="c1"># After the association step, one must handle there different cases:</span>
-        <span class="c1">#   1) Detections which have not beed associated with a track: For these, create a new filter class and initialize its state based on the detection </span>
+        <span class="c1">#   1) Detections which have not beed associated with a track: For these, create a new filter class and initialize its state based on the detection</span>
         <span class="c1">#   2) Tracks which have a detection: The state of these can be updated based on the associated detection</span>
-        <span class="c1">#   3) Tracks which have no detection: It makes sense to allow for a few missing frames, nonetheless it is still necessary to predict the </span>
+        <span class="c1">#   3) Tracks which have no detection: It makes sense to allow for a few missing frames, nonetheless it is still necessary to predict the</span>
         <span class="c1">#      current filter state (e.g. based on the optical flow measurement and the object velocity). If too many frames are missing, the track can be deleted</span>
 
         <span class="c1"># Note: You can access data[&quot;detections&quot;] and data[&quot;classes&quot;] to receive the current list of detections and their corresponding classes</span>
         <span class="c1"># You must return a dictionary with the given fields:</span>
-        <span class="c1">#       &quot;tracks&quot;:           A Nx4 NumPy Array containing a 4-dimensional state vector for each track. Similar to the detections, </span>
+        <span class="c1">#       &quot;tracks&quot;:           A Nx4 NumPy Array containing a 4-dimensional state vector for each track. Similar to the detections,</span>
         <span class="c1">#                           the track state containts the center point (X,Y) as well as the bounding box width and height (W, H)</span>
         <span class="c1">#       &quot;trackVelocities&quot;:  A Nx2 NumPy Array with an additional velocity estimate (in pixels per frame) for each track</span>
-        <span class="c1">#       &quot;trackAge&quot;:         A Nx1 List with the track age (number of total frames this track exists). The track age starts at </span>
+        <span class="c1">#       &quot;trackAge&quot;:         A Nx1 List with the track age (number of total frames this track exists). The track age starts at</span>
         <span class="c1">#                           1 on track creation and increases monotonically by 1 per frame until the track is deleted.</span>
         <span class="c1">#       &quot;trackClasses&quot;:     A Nx1 List of classes associated with each track. Similar to detections, the following mapping must be used</span>
         <span class="c1">#                               0: Ball</span>
         <span class="c1">#                               1: GoalKeeper</span>
         <span class="c1">#                               2: Player</span>
         <span class="c1">#                               3: Referee</span>
-        <span class="c1">#       &quot;trackIds&quot;:         A Nx1 List of unique IDs for each track. IDs must not be reused and be unique during the lifetime of the program. </span>
+        <span class="c1">#       &quot;trackIds&quot;:         A Nx1 List of unique IDs for each track. IDs must not be reused and be unique during the lifetime of the program.</span>
         <span class="k">return</span> <span class="p">{</span>
             <span class="s2">&quot;tracks&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
             <span class="s2">&quot;trackVelocities&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
             <span class="s2">&quot;trackAge&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
             <span class="s2">&quot;trackClasses&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
-            <span class="s2">&quot;trackIds&quot;</span><span class="p">:</span> <span class="kc">None</span>
+            <span class="s2">&quot;trackIds&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
         <span class="p">}</span></div>
 </div>
-
 
 </pre></div>
 

@@ -102,7 +102,7 @@
 <a class="viewcode-back" href="../../pipeline.html#pipeline.detector.Detector">[docs]</a>
 <span></span><span class="k">class</span><span class="w"> </span><span class="nc">Detector</span><span class="p">:</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;Detector&quot;</span> <span class="c1"># Do not change the name of the module as otherwise recording replay would break!</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;Detector&quot;</span>  <span class="c1"># Do not change the name of the module as otherwise recording replay would break!</span>
 
 <div class="viewcode-block" id="Detector.start">
 <a class="viewcode-back" href="../../pipeline.html#pipeline.detector.Detector.start">[docs]</a>
@@ -123,9 +123,9 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
         <span class="c1"># TODO: Implement processing of a single frame</span>
         <span class="c1"># The task of the detector is to detect the ball, the goal keepers, the players and the referees if visible.</span>
-        <span class="c1"># A bounding box needs to be defined for each detected object including the objects center position (X,Y) and its width and height (W, H) </span>
-        <span class="c1"># You can return an arbitrary number of objects </span>
-        
+        <span class="c1"># A bounding box needs to be defined for each detected object including the objects center position (X,Y) and its width and height (W, H)</span>
+        <span class="c1"># You can return an arbitrary number of objects</span>
+
         <span class="c1"># Note: You can access data[&quot;image&quot;] to receive the current image</span>
         <span class="c1"># Return a dictionary with detections and classes</span>
         <span class="c1">#</span>
@@ -140,10 +140,7 @@
         <span class="c1">#   2: Player</span>
         <span class="c1">#   3: Referee</span>
 
-        <span class="k">return</span> <span class="p">{</span>
-            <span class="s2">&quot;detections&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
-            <span class="s2">&quot;classes&quot;</span><span class="p">:</span> <span class="kc">None</span>
-        <span class="p">}</span></div>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;detections&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;classes&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">}</span></div>
 </div>
 
 </pre></div>
