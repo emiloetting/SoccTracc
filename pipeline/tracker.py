@@ -64,9 +64,9 @@ class Filter:
         
         # Initial covariance P
         if cls == 0: #ball
-            self.P = np.diag([0.01, 0.01, 0.01, 0.01, 100, 100], dtype=np.float32)
+            self.P = np.diag([0.01, 0.01, 0.01, 0.01, 100, 100])
         else: 
-            self.P = np.diag([0.01, 0.01, 0.01, 0.01, 10, 10], dtype=np.float32)
+            self.P = np.diag([0.01, 0.01, 0.01, 0.01, 10, 10])
         
         # Identity matrix for updates
         self.I = np.eye(6)
