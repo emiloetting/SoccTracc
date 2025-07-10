@@ -49,23 +49,24 @@ class Filter:
         ], dtype=np.float64)
         
         # Process noise Q
-        self.Q = np.eye(6, dtype=np.float64)
-        self.Q[4:, 4:] *= 0.001 
+        self.Q = np.diag([1, 1, 1, 1, 5, 5], dtype=np.float32)
         
         # Measurement noise R
         self.R = np.eye(4, dtype=np.float64) * 2.0
         
         # Control matrix B (control input is the optical flow)
         self.B = np.zeros((6, 2), dtype=np.float64)
+        self.B[0,0] = 1  
+        self.B[1,1] = 1    
         
         # Initialize state vector: [x, y, w, h, vx, vy]
-        self.x = np.array([z[0], z[1], z[2], z[3], 0, 0], dtype=np.float64)
+        self.x = np.array([z[0], z[1], z[2], z[3], 0, 0], dtype=np.float32)
         
         # Initial covariance P
         if cls == 0: #ball
-            self.P = np.diag([10.0, 10.0, 10.0, 10.0, 10, 10])
+            self.P = np.diag([0.01, 0.01, 0.01, 0.01, 100, 100], dtype=np.float32)
         else: 
-            self.P = np.diag([10.0, 10.0, 10.0, 10.0, 0.1, 0.1])
+            self.P = np.diag([0.01, 0.01, 0.01, 0.01, 10, 10], dtype=np.float32)
         
         # Identity matrix for updates
         self.I = np.eye(6)
@@ -78,7 +79,7 @@ class Filter:
         """
         # Predict state with no control input
         dx, dy = opt_flow
-        u = np.array([+dx, +dy], dtype=np.float64)
+        u = np.array([-dx, -dy], dtype=np.float64)
         self.x = np.dot(self.F,self.x)+ np.dot(self.B, u)
         self.P = np.dot(np.dot(self.F,self.P),self.F.T)+self.Q
         # Update age and time
