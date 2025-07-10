@@ -12,14 +12,6 @@ pipeline.detector module
    :show-inheritance:
    :undoc-members:
 
-pipeline.doc\_tester module
----------------------------
-
-.. automodule:: pipeline.doc_tester
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
 pipeline.opticalflow module
 ---------------------------
 
