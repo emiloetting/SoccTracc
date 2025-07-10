@@ -1,9 +1,6 @@
 name: CI/CD - Pipeline
 on: 
   push:
-    branches: ['Sphinx_Docs', 'main']
-  
-  pull_request: 
     branches: ['main']
 
 jobs:
