@@ -49,7 +49,7 @@ class Filter:
         ], dtype=np.float64)
         
         # Process noise Q
-        self.Q = np.diag([1, 1, 1, 1, 5, 5], dtype=np.float32)
+        self.Q = np.diag([1, 1, 1, 1, 5, 5])
         
         # Measurement noise R
         self.R = np.eye(4, dtype=np.float64) * 2.0
