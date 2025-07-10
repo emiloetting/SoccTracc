@@ -16,21 +16,11 @@ class ShirtClassifier:
         pass
 
     def step(self, data):
-        # TODO: Implement processing of a current frame list
-        # The task of the shirt classifier module is to identify the two teams based on their shirt color and to assign each player to one of the two teams
-
-        # Note: You can access data["image"] and data["tracks"] to receive the current image as well as the current track list
-        # You must return a dictionary with the given fields:
-        #       "teamAColor":       A 3-tuple (B, G, R) containing the blue, green and red channel values (between 0 and 255) for team A
-        #       "teamBColor":       A 3-tuple (B, G, R) containing the blue, green and red channel values (between 0 and 255) for team B
-        #       "teamClasses"       A list with an integer class for each track according to the following mapping:
-        #           0: Team not decided or not a player (e.g. ball, goal keeper, referee)
-        #           1: Player belongs to team A
-        #           2: Player belongs to team B
-
         self.current_frame += 1
         # Get images of detected objetcs
+        # self.dev = 0
         player_imgs = self.get_players_boxes(data)
+        # self.dev = 0
         lst_torsos_test = []
         lst_torsos_train = []
         # Reduce Image features by calculating mean color (BGR) of image
@@ -42,9 +32,7 @@ class ShirtClassifier:
             lst_torsos_test.append(mean_lab)
             if self.current_frame < 9:  # Collect data for training
                 lst_torsos_train.append(mean_lab)
-
-            # Add to list of all mean pxls of all torsos in current frame    
-
+            # self.dev += 1
         arr_torsos_test = np.array(lst_torsos_test)
         
         # Set data to return before clustering is completed
@@ -93,9 +81,12 @@ class ShirtClassifier:
             x, y, w, h = player_box
             x1, y1, x2, y2 = int(x-w/2), int(y-h/4), int(x+w/2), int(y) #just take y as min height because torso
             cutout = img[y1:y2, x1:x2, ...]
-            # cv.imwrite(f"box-{uuid4().hex[0:5]}.png", cutout)
             if cutout.size == 0: player_imgs.append(np.empty(0))
-            else: player_imgs.append(cutout)
+            else: 
+                player_imgs.append(cutout)
+                # cv.imwrite(f"player-{self.dev}.png", img[int(y-h/2):int(y+h/2), int(x-w/2):int(x+w/2), ...])
+                # cv.imwrite(f"box-{self.dev}.png", cutout)
+                # self.dev += 1
         return player_imgs
     
     def generate_translation_layer(self, labels: np.ndarray):
@@ -134,8 +125,7 @@ class ShirtClassifier:
         if img.size == 0: return np.empty(0)
         img = cv.cvtColor(img, cv.COLOR_BGR2HSV)
         # Create a mask for green pixels
-        greens = cv.inRange(img, np.array([38, 40, 40]), np.array([70, 255, 255])).astype(bool)
-        # blacks = cv.inRange(img, np.asarray([0, 0, 0]), np.asarray([180, 255, 12])).astype(bool)
+        greens = (img[...,0] >= 29) & (img[...,0] <= 70)
         # Apply the mask to the original image
         cleansed = img[~greens].reshape(-1, 1, 3)
         if cleansed.size == 0: return np.empty(0)
@@ -158,7 +148,8 @@ class ShirtClassifier:
         # Calculate mean pixel color as float, ensure correct dtype
         mean_lab = np.mean(lab, axis=(0,1)).astype(np.uint8)
         
-        # cv.imwrite(f"mask-{uuid4().hex[0:5]}.png", img)
+        # cv.imwrite(f"mask-{self.dev}.png", img)
+        # cv.imwrite(f"color-{self.dev}.png", cv.cvtColor(mean_lab.reshape(-1, 1, 3), cv.COLOR_LAB2BGR))
         
         return mean_lab
     
