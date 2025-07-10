@@ -153,7 +153,7 @@ class ShirtClassifier:
             return np.empty(0)
         img = cv.cvtColor(img, cv.COLOR_BGR2HSV)
         # Create a mask for green pixels
-        greens = (img[..., 0] >= 29) & (img[..., 0] <= 70)
+        greens = (img[..., 0] >= 32) & (img[..., 0] <= 70)
         # Apply the mask to the original image
         cleansed = img[~greens].reshape(-1, 1, 3)
         if cleansed.size == 0:
