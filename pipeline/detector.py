@@ -1,6 +1,6 @@
 class Detector:
     def __init__(self):
-        self.name = "Detector" # Do not change the name of the module as otherwise recording replay would break!
+        self.name = "Detector"  # Do not change the name of the module as otherwise recording replay would break!
 
     def start(self, data):
         # TODO: Implement start up procedure of the module
@@ -13,9 +13,9 @@ class Detector:
     def step(self, data):
         # TODO: Implement processing of a single frame
         # The task of the detector is to detect the ball, the goal keepers, the players and the referees if visible.
-        # A bounding box needs to be defined for each detected object including the objects center position (X,Y) and its width and height (W, H) 
-        # You can return an arbitrary number of objects 
-        
+        # A bounding box needs to be defined for each detected object including the objects center position (X,Y) and its width and height (W, H)
+        # You can return an arbitrary number of objects
+
         # Note: You can access data["image"] to receive the current image
         # Return a dictionary with detections and classes
         #
@@ -30,7 +30,4 @@ class Detector:
         #   2: Player
         #   3: Referee
 
-        return {
-            "detections": None,
-            "classes": None
-        }
+        return {"detections": None, "classes": None}

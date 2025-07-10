@@ -1,6 +1,6 @@
 class ShirtClassifier:
     def __init__(self):
-        self.name = "Shirt Classifier" # Do not change the name of the module as otherwise recording replay would break!
+        self.name = "Shirt Classifier"  # Do not change the name of the module as otherwise recording replay would break!
 
     def start(self, data):
         # TODO: Implement start up procedure of the module
@@ -22,6 +22,4 @@ class ShirtClassifier:
         #           0: Team not decided or not a player (e.g. ball, goal keeper, referee)
         #           1: Player belongs to team A
         #           2: Player belongs to team B
-        return { "teamAColor": None,
-                 "teamBColor": None,
-                 "teamClasses": None }
+        return {"teamAColor": None, "teamBColor": None, "teamClasses": None}
