@@ -50,33 +50,35 @@ class Filter:
         
         # Process noise Q
         self.Q = np.eye(6, dtype=np.float64)
-        self.Q[4:, 4:] *= 0.01 
+        self.Q[4:, 4:] *= 0.001 
         
         # Measurement noise R
-        self.R = np.eye(4, dtype=np.float64) * 1.0
+        self.R = np.eye(4, dtype=np.float64) * 2.0
         
-        # Control matrix B (no control input)
-        self.B = np.zeros((6, 1), dtype=np.float64)
+        # Control matrix B (control input is the optical flow)
+        self.B = np.zeros((6, 2), dtype=np.float64)
         
         # Initialize state vector: [x, y, w, h, vx, vy]
         self.x = np.array([z[0], z[1], z[2], z[3], 0, 0], dtype=np.float64)
         
         # Initial covariance P
-        self.P = np.eye(6, dtype=np.float64)
-        self.P[4:, 4:] *= 1000.0  
-        self.P *= 10.0
+        if cls == 0: #ball
+            self.P = np.diag([10.0, 10.0, 10.0, 10.0, 10, 10])
+        else: 
+            self.P = np.diag([10.0, 10.0, 10.0, 10.0, 0.1, 0.1])
         
         # Identity matrix for updates
         self.I = np.eye(6)
     
     
     
-    def predict(self):
+    def predict(self, opt_flow):
         """
         Prediction step of Kalman filter 
         """
         # Predict state with no control input
-        u = np.zeros(1)
+        dx, dy = opt_flow
+        u = np.array([+dx, +dy], dtype=np.float64)
         self.x = np.dot(self.F,self.x)+ np.dot(self.B, u)
         self.P = np.dot(np.dot(self.F,self.P),self.F.T)+self.Q
         # Update age and time
@@ -113,7 +115,7 @@ class Filter:
         """
         return self.x[4:6].copy()
     
-    def should_be_deleted(self, max_age=30):
+    def should_be_deleted(self, max_age):
         """
         Determine if track should be deleted
         max_age: maximum number of frames without detection
@@ -124,16 +126,15 @@ class Filter:
         """
         Is the track confirmed (enough hits)?
         """
-        return self.hits >= min_hits and self.time_since_update == 0
-    
+        return self.hits >= min_hits  
 class Tracker:
     def __init__(self):
         self.name = "Tracker"  # Do not change the name of the module as otherwise recording replay would break!
         self.filters: list[Filter] = []
         
-        self.max_disappeared = 30  
+        self.max_disappeared = 10 
         self.min_hits = 3         # minimum hits to confirm a track
-        self.iou_threshold = 0.3   
+        self.iou_threshold = 0.1  
 
     def start(self, data):
         """
@@ -161,21 +162,19 @@ class Tracker:
         
         # Predict tracks
         for filter in list(self.filters):
-            filter.predict()
+            filter.predict(data["opticalFlow"])
             # Delete old tracks
-            if filter.should_be_deleted():
+            if filter.should_be_deleted(self.max_disappeared):
                 self.filters.remove(filter)
             
         # Associate detections to tracks
         matches = self.associate_detections_to_tracks(detections, self.filters, classes)
 
         # TODO check if necessary/ better option for unmatched detections than creating new tracks
-        for detection, track in matches:
+        for detection, track in enumerate(matches):
             if track is None: #sentinels that no match was found
                 filter = Filter(detections[detection], classes[detection])
                 self.filters.append(filter)
-            elif detection is None:
-                self.filters[track].predict()
             else:
                 self.filters[track].update(detections[detection]) # feed the filter the bounding box
 
@@ -186,34 +185,16 @@ class Tracker:
         """
         Associate detections to tracks based on Hungarian Algorithm
         """
-        # matches = np.full(len(detections), None)
+        matches = np.full(len(detections), None)
         # if no tracks: no matches, all detections unmatched
-        
         if not filters or len(detections) == 0:
-            matches = np.full((len(detections), 2), None)
-            matches[:,0] = np.arange(len(detections))
-            return matches 
+            return matches
         
         cost_matrix = self.calculate_cost_matrix(detections, filters, classes)
+        detections, tracks = linear_sum_assignment(cost_matrix)
         
-        _detections, _tracks = linear_sum_assignment(cost_matrix)
-        
-        valid = cost_matrix[_detections, _tracks] <= 1.0 - self.iou_threshold
-        
-        valid_detections = _detections[valid]
-        valid_tracks = _tracks[valid]
-
-        d_indx = np.arange(len(detections))
-        f_indx = np.arange(len(filters))
-        unmatched_detections = np.setdiff1d(d_indx, valid_detections)
-        unmatched_tracks=np.setdiff1d(f_indx, valid_tracks)
-
-        matches = np.full((len(valid_tracks)+len(unmatched_detections)+len(unmatched_tracks), 2), None)
-        matches[d_indx, 0] = d_indx
-        matches[_detections[valid], 1] = _tracks[valid]
-        
-        matches[len(valid_detections):len(valid_detections)+len(unmatched_detections), 0] = unmatched_detections
-        matches[len(valid_detections)+len(unmatched_detections):, 1] = unmatched_tracks
+        valid = cost_matrix[detections, tracks] <= 1.0 - self.iou_threshold
+        matches[detections[valid]] = tracks[valid]
 
         return matches
     
@@ -268,7 +249,7 @@ class Tracker:
         create output dictionary
         """ 
         trackInfo = np.full((len(self.filters), 9), None)
-        
+
         for idx, filter in enumerate(self.filters):
             if filter.is_valid(self.min_hits): # bei mehr als 5 hits und wenn es genau in unserem step geupdated
                 trackInfo[idx, 0:6] = filter.x
