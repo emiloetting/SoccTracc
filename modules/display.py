@@ -133,7 +133,7 @@ class Display:
               color = (255,0,0) # Player
               if team == 1:
                   color = teamAColor
-              if team == -1:
+              if team == 2:
                   color = teamBColor
             if cls == 1: # GoalKeeper
                 color = (0,128,255)
