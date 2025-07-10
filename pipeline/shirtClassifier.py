@@ -3,6 +3,9 @@ import cv2 as cv
 import os
 from sklearn.neighbors import NearestCentroid
 from sklearn.cluster import AgglomerativeClustering
+import plotly.graph_objects as go
+
+
 
 cwd = os.getcwd()
 player_paths = os.path.join(cwd, ".faafo", "full_players")
@@ -23,7 +26,7 @@ class ShirtClassifier:
         self.team_b_color = None
 
     def start(self, data):
-        self.clusterer = AgglomerativeClustering(n_clusters=3, linkage="ward", compute_full_tree=True, metric="euclidean")
+        self.clusterer = AgglomerativeClustering(n_clusters=3, linkage="ward", compute_full_tree=False, metric="euclidean")
         self.classifier = NearestCentroid()
 
     def stop(self, data):
@@ -113,8 +116,8 @@ class ShirtClassifier:
             self.torso_means = np.array(self.torso_means)
 
             # Reshape each image to 1D array (3 channels) before clustering
-            torso_means_reshaped = np.array([torso.reshape(-3, ) for torso in self.torso_means], dtype=np.uint8)
-            
+            torso_means_reshaped=np.array([torso.reshape(-3, ) for torso in self.torso_means], dtype=np.uint8)
+
             # Build cluster 
             self.clusterer.fit_predict(torso_means_reshaped)    
 
@@ -127,6 +130,103 @@ class ShirtClassifier:
 
             # Use clusterer as classifier -> Prev. KNN does about same and takes longer
             self.labels_pred = self.classifier.predict(self.current_torsos_in_frame) # Labels for players in this frame were calculated in prev. step, however 
+
+            # # CLUSTERER LABELS
+            # centroids = self.classifier.centroids_
+            # N = len(torso_means_reshaped)
+            # x_all = torso_means_reshaped[:,0]
+            # y_all = torso_means_reshaped[:,1]
+            # z_all = torso_means_reshaped[:,2]
+
+            # lab_img_t   = torso_means_reshaped.reshape(-1,1,3)          
+            # rgb_img_t   = cv.cvtColor(lab_img_t, cv.COLOR_LAB2RGB)      
+            # rgb_arr_t   = rgb_img_t[:,0,:]                              
+            # colors_t = [
+            #     'rgb(0,255,0)' if lbl == 0        # Rest
+            #     else 'rgb(0,0,255)' if lbl == 1       # Team A
+            #     else 'rgb(255,0,0)'                   # Team B (lbl == 2)
+            #     for lbl in labels_remapped
+            # ]  
+
+            # size_all   = [20]*N
+            # symbol_all = ['circle']*N
+
+            # fig = go.Figure(
+            #     go.Scatter3d(
+            #         x=x_all, y=y_all, z=z_all,
+            #         mode='markers',
+            #         marker=dict(
+            #             color=colors_t,
+            #             size=size_all,
+            #             symbol=symbol_all,
+            #             opacity=0.8,
+            #             line=dict(width=0)
+            #         )
+            #     )
+            # )
+            # fig.update_layout(
+            #     paper_bgcolor='black',
+            #     scene=dict(
+            #         bgcolor='black',
+            #         xaxis=dict(gridcolor='lightgray', zerolinecolor='lightgray', tickfont=dict(color='lightgray')),
+            #         yaxis=dict(gridcolor='lightgray', zerolinecolor='lightgray', tickfont=dict(color='lightgray')),
+            #         zaxis=dict(gridcolor='lightgray', zerolinecolor='lightgray', tickfont=dict(color='lightgray')),
+            #     ),
+            #     margin=dict(l=0, r=0, t=0, b=0)
+            # )
+            # fig.show()
+
+
+
+            # # CLASSIFIER CENTROIDS
+            # # Annahme: torso_means_reshaped hat Shape (N,3), centroids hat Shape (2,3)
+            # N = len(torso_means_reshaped)
+
+            # lab_img_t   = torso_means_reshaped.reshape(-1,1,3)          
+            # rgb_img_t   = cv.cvtColor(lab_img_t, cv.COLOR_LAB2RGB)      
+            # rgb_arr_t   = rgb_img_t[:,0,:]                              
+            # colors_t    = [f"rgb({r},{g},{b})" for r,g,b in rgb_arr_t]  
+
+            # colors_c    = [ 
+            #                'rgb(255,0,0)',  
+            #                'rgb(0,255,0)',
+            #                'rgb(0,0,255)']  
+
+            # colors_all = colors_t + colors_c
+
+            # x_all = np.concatenate([torso_means_reshaped[:,0], centroids[:,0]])
+            # y_all = np.concatenate([torso_means_reshaped[:,1], centroids[:,1]])
+            # z_all = np.concatenate([torso_means_reshaped[:,2], centroids[:,2]])
+
+            # size_all   = [20]*N + [25]*3
+            # symbol_all = ['circle']*(N+3)
+
+            # fig = go.Figure(
+            #     go.Scatter3d(
+            #         x=x_all, y=y_all, z=z_all,
+            #         mode='markers',
+            #         marker=dict(
+            #             color=colors_all,
+            #             size=size_all,
+            #             symbol=symbol_all,
+            #             opacity=0.8,
+            #             line=dict(width=0)
+            #         )
+            #     )
+            # )
+            # fig.update_layout(
+            #     paper_bgcolor='black',
+            #     scene=dict(
+            #         bgcolor='black',
+            #         xaxis=dict(gridcolor='lightgray', zerolinecolor='lightgray', tickfont=dict(color='lightgray')),
+            #         yaxis=dict(gridcolor='lightgray', zerolinecolor='lightgray', tickfont=dict(color='lightgray')),
+            #         zaxis=dict(gridcolor='lightgray', zerolinecolor='lightgray', tickfont=dict(color='lightgray')),
+            #     ),
+            #     margin=dict(l=0, r=0, t=0, b=0)
+            # )
+            # fig.show()
+
+
 
             # Fit to changed requirement of team-class 2 to be -1
             self.labels_pred[self.labels_pred == 2] = -1
