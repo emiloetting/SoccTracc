@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.optimize import linear_sum_assignment
-from itertools import combinations
+
 # Note: A typical tracker design implements a dedicated filter class for keeping the individual state of each track
 # The filter class represents the current state of the track (predicted position, size, velocity) as well as additional information (track age, class, missing updates, etc..)
 # The filter class is also responsible for assigning a unique ID to each newly formed track
