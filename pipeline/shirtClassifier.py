@@ -37,11 +37,8 @@ class ShirtClassifier:
         for img in player_imgs:
             # Mask out green and black pixels
             masked_img = self.mask_img(img)
-            if masked_img is None:
-                mean_lab = self.get_mean_lab_color(img)
-            else:
-                # Calculate mean color of torso image (LAB) and append to list
-                mean_lab = self.get_mean_lab_color(masked_img)
+            # Calculate mean color of torso image (LAB) and append to list
+            mean_lab = self.get_mean_lab_color(masked_img)
             lst_torsos_test.append(mean_lab)
             if self.current_frame < 9:  # Collect data for training
                 lst_torsos_train.append(mean_lab)
@@ -97,7 +94,8 @@ class ShirtClassifier:
             x1, y1, x2, y2 = int(x-w/2), int(y-h/4), int(x+w/2), int(y) #just take y as min height because torso
             cutout = img[y1:y2, x1:x2, ...]
             # cv.imwrite(f"box-{uuid4().hex[0:5]}.png", cutout)
-            player_imgs.append(cutout)
+            if cutout.size == 0: player_imgs.append(None)
+            else: player_imgs.append(cutout)
         return player_imgs
     
     def generate_translation_layer(self, labels: np.ndarray):
@@ -133,13 +131,14 @@ class ShirtClassifier:
         Returns:
             np.array: Image with green pixels blacked out. !!HSV!!
         """
+        if img.size == 0: return np.empty(0)
         img = cv.cvtColor(img, cv.COLOR_BGR2HSV)
         # Create a mask for green pixels
         greens = cv.inRange(img, np.array([38, 40, 40]), np.array([70, 255, 255])).astype(bool)
         # blacks = cv.inRange(img, np.asarray([0, 0, 0]), np.asarray([180, 255, 12])).astype(bool)
         # Apply the mask to the original image
         cleansed = img[~greens].reshape(-1, 1, 3)
-        if cleansed.size == 0: return None
+        if cleansed.size == 0: return np.empty(0)
         cleansed = cv.cvtColor(cleansed, cv.COLOR_HSV2BGR)
         return cleansed
     
@@ -152,7 +151,6 @@ class ShirtClassifier:
         """
         # If no 'colored' pixel to be be collected: return green in LAB
         if img.size == 0:
-            print("no pxl")
             return np.array([127, 0, 255])
         
         lab = cv.cvtColor(img, cv.COLOR_BGR2LAB)
