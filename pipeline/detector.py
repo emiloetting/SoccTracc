@@ -10,7 +10,6 @@ class Detector:
         self.name = "Detector"  # Do not change the name of the module as otherwise recording replay would break!
         self.model = YOLO("yolov8m-football.pt")
 
-
     def start(self, data):
         pass
 
