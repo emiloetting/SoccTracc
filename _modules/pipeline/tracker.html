@@ -93,18 +93,158 @@
            <div itemprop="articleBody">
              
   <h1>Source code for pipeline.tracker</h1><div class="highlight"><pre>
-<span></span><span class="c1"># Note: A typical tracker design implements a dedicated filter class for keeping the individual state of each track</span>
-<span class="c1"># The filter class represents the current state of the track (predicted position, size, velocity) as well as additional information (track age, class, missing updates, etc..)</span>
-<span class="c1"># The filter class is also responsible for assigning a unique ID to each newly formed track</span>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.optimize</span><span class="w"> </span><span class="kn">import</span> <span class="n">linear_sum_assignment</span>
+
+
 <div class="viewcode-block" id="Filter">
 <a class="viewcode-back" href="../../pipeline.html#pipeline.tracker.Filter">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">Filter</span><span class="p">:</span>
+    <span class="c1"># Class variable for unique IDs - starts at 0</span>
+    <span class="n">_id_counter</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="bp">cls</span><span class="p">):</span>
-        <span class="c1"># TODO: Implement filter initializstion</span>
-        <span class="k">pass</span></div>
+        <span class="c1"># Assign unique track ID</span>
+        <span class="n">Filter</span><span class="o">.</span><span class="n">_id_counter</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">track_id</span> <span class="o">=</span> <span class="n">Filter</span><span class="o">.</span><span class="n">_id_counter</span>
+
+        <span class="c1"># Track information</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">class_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">age</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hits</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">time_since_update</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="c1"># Transition matrix F (constant velocity)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">F</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+            <span class="p">[</span>
+                <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+                <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+                <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+                <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+                <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+                <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+            <span class="p">],</span>
+            <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Measurement matrix H (only position and size)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">H</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+            <span class="p">[</span>
+                <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+                <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+                <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+                <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+            <span class="p">],</span>
+            <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Process noise Q</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Q</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">])</span>
+
+        <span class="c1"># Measurement noise R</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">R</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span> <span class="o">*</span> <span class="mf">2.0</span>
+
+        <span class="c1"># Control matrix B (control input is the optical flow having an effect only on position of the boxes)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">B</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">6</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">B</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">B</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+
+        <span class="c1"># Initialize state vector: [x, y, w, h, vx, vy]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">z</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">z</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">z</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">z</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+
+        <span class="c1"># Initial covariance P</span>
+        <span class="k">if</span> <span class="bp">cls</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># ball</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">P</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">([</span><span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">100</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">P</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">([</span><span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">])</span>
+
+        <span class="c1"># Identity matrix for updates</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">I</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="mi">6</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Filter.predict">
+<a class="viewcode-back" href="../../pipeline.html#pipeline.tracker.Filter.predict">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">opt_flow</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Predicts the next state with optical flow as control.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            opt_flow (tuple): Optical flow vector (dx, dy).</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Predict state with control input = optical flow</span>
+        <span class="n">dx</span><span class="p">,</span> <span class="n">dy</span> <span class="o">=</span> <span class="n">opt_flow</span>
+        <span class="n">u</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="n">dx</span><span class="p">,</span> <span class="o">-</span><span class="n">dy</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">F</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">B</span><span class="p">,</span> <span class="n">u</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">P</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">F</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">P</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">F</span><span class="o">.</span><span class="n">T</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">Q</span>
+        <span class="c1"># Update age and time</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">age</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">time_since_update</span> <span class="o">+=</span> <span class="mi">1</span></div>
 
 
-    <span class="c1"># TODO: Implement remaining funtionality for an individual track</span>
+<div class="viewcode-block" id="Filter.update">
+<a class="viewcode-back" href="../../pipeline.html#pipeline.tracker.Filter.update">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">z</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Updates state with a new measurement.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            z (np.ndarray): Measurement [x, y, w, h].</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Kalman filter update equations</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">z</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">H</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">S</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">H</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">P</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">H</span><span class="o">.</span><span class="n">T</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">R</span>
+        <span class="n">K</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">P</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">H</span><span class="o">.</span><span class="n">T</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">S</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">K</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">P</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">I</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">K</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">H</span><span class="p">)),</span> <span class="bp">self</span><span class="o">.</span><span class="n">P</span><span class="p">)</span>
+
+        <span class="c1"># Update hits and time</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hits</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">time_since_update</span> <span class="o">=</span> <span class="mi">0</span></div>
+
+
+<div class="viewcode-block" id="Filter.get_state">
+<a class="viewcode-back" href="../../pipeline.html#pipeline.tracker.Filter.get_state">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_state</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Gets current bounding box state.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            np.ndarray: Current state [x, y, w, h].</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">[:</span><span class="mi">4</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="Filter.get_velocity">
+<a class="viewcode-back" href="../../pipeline.html#pipeline.tracker.Filter.get_velocity">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_velocity</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Gets current velocity.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            np.ndarray: Current velocity [vx, vy].</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">[</span><span class="mi">4</span><span class="p">:</span><span class="mi">6</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="Filter.should_be_deleted">
+<a class="viewcode-back" href="../../pipeline.html#pipeline.tracker.Filter.should_be_deleted">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">should_be_deleted</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">max_age</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Determines if track should be deleted due to age.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            max_age (int): Max frames without updates.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if track should be deleted.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">time_since_update</span> <span class="o">&gt;</span> <span class="n">max_age</span></div>
+
+
+<div class="viewcode-block" id="Filter.is_valid">
+<a class="viewcode-back" href="../../pipeline.html#pipeline.tracker.Filter.is_valid">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_valid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">min_hits</span><span class="o">=</span><span class="mi">3</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Checks if track is confirmed based on hits.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            min_hits (int): Minimum hits to confirm.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if hits &gt;= min_hits.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">hits</span> <span class="o">&gt;=</span> <span class="n">min_hits</span></div>
+</div>
+
 
 
 <div class="viewcode-block" id="Tracker">
@@ -112,54 +252,187 @@
 <span class="k">class</span><span class="w"> </span><span class="nc">Tracker</span><span class="p">:</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;Tracker&quot;</span>  <span class="c1"># Do not change the name of the module as otherwise recording replay would break!</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">filters</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Filter</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_disappeared</span> <span class="o">=</span> <span class="mi">10</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">min_hits</span> <span class="o">=</span> <span class="mi">3</span>  <span class="c1"># minimum hits to confirm a track</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">iou_threshold</span> <span class="o">=</span> <span class="mf">0.1</span>
 
 <div class="viewcode-block" id="Tracker.start">
 <a class="viewcode-back" href="../../pipeline.html#pipeline.tracker.Tracker.start">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
-        <span class="c1"># TODO: Implement start up procedure of the module</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Placeholder for start. No operation.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            data (dict): Input data.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">pass</span></div>
 
 
 <div class="viewcode-block" id="Tracker.stop">
 <a class="viewcode-back" href="../../pipeline.html#pipeline.tracker.Tracker.stop">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">stop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
-        <span class="c1"># TODO: Implement shut down procedure of the module</span>
-        <span class="k">pass</span></div>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Clears all tracks.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            data (dict): Input data.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">filters</span> <span class="o">=</span> <span class="p">[]</span></div>
 
 
 <div class="viewcode-block" id="Tracker.step">
 <a class="viewcode-back" href="../../pipeline.html#pipeline.tracker.Tracker.step">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
-        <span class="c1"># TODO: Implement processing of a detection list</span>
-        <span class="c1"># The task of the tracker module is to identify (temporal) consistent tracks out of the given list of detections</span>
-        <span class="c1"># The tracker maintains a list of known tracks which is initially empty.</span>
-        <span class="c1"># The tracker then tries to associate all given detections from the detector to existing tracks. A meaningful metric needs to be defined</span>
-        <span class="c1"># to decide which detection should be associated with each track and which detections better stay unassigned.</span>
-        <span class="c1"># After the association step, one must handle there different cases:</span>
-        <span class="c1">#   1) Detections which have not beed associated with a track: For these, create a new filter class and initialize its state based on the detection</span>
-        <span class="c1">#   2) Tracks which have a detection: The state of these can be updated based on the associated detection</span>
-        <span class="c1">#   3) Tracks which have no detection: It makes sense to allow for a few missing frames, nonetheless it is still necessary to predict the</span>
-        <span class="c1">#      current filter state (e.g. based on the optical flow measurement and the object velocity). If too many frames are missing, the track can be deleted</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Processes detections and updates tracks.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            data (dict): Contains:</span>
+<span class="sd">                detections (list): Detection boxes [x,y,w,h].</span>
+<span class="sd">                classes (list): Class indices.</span>
+<span class="sd">                opticalFlow (tuple): Optical flow vector (dx, dy).</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            dict: Contains:</span>
+<span class="sd">                tracks (np.ndarray): Bounding boxes [x,y,w,h].</span>
+<span class="sd">                trackVelocities (np.ndarray): Velocities [vx,vy].</span>
+<span class="sd">                trackAge (list): Ages of tracks.</span>
+<span class="sd">                trackClasses (list): Classes of tracks.</span>
+<span class="sd">                trackIds (list): Track identifiers.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">detections</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;detections&quot;</span><span class="p">,</span> <span class="p">[])</span>
+        <span class="n">classes</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;classes&quot;</span><span class="p">,</span> <span class="p">[])</span>
 
-        <span class="c1"># Note: You can access data[&quot;detections&quot;] and data[&quot;classes&quot;] to receive the current list of detections and their corresponding classes</span>
-        <span class="c1"># You must return a dictionary with the given fields:</span>
-        <span class="c1">#       &quot;tracks&quot;:           A Nx4 NumPy Array containing a 4-dimensional state vector for each track. Similar to the detections,</span>
-        <span class="c1">#                           the track state containts the center point (X,Y) as well as the bounding box width and height (W, H)</span>
-        <span class="c1">#       &quot;trackVelocities&quot;:  A Nx2 NumPy Array with an additional velocity estimate (in pixels per frame) for each track</span>
-        <span class="c1">#       &quot;trackAge&quot;:         A Nx1 List with the track age (number of total frames this track exists). The track age starts at</span>
-        <span class="c1">#                           1 on track creation and increases monotonically by 1 per frame until the track is deleted.</span>
-        <span class="c1">#       &quot;trackClasses&quot;:     A Nx1 List of classes associated with each track. Similar to detections, the following mapping must be used</span>
-        <span class="c1">#                               0: Ball</span>
-        <span class="c1">#                               1: GoalKeeper</span>
-        <span class="c1">#                               2: Player</span>
-        <span class="c1">#                               3: Referee</span>
-        <span class="c1">#       &quot;trackIds&quot;:         A Nx1 List of unique IDs for each track. IDs must not be reused and be unique during the lifetime of the program.</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">detections</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">detections</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">detections</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">detections</span><span class="p">)</span>
+
+        <span class="c1"># Predict tracks</span>
+        <span class="k">for</span> <span class="nb">filter</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filters</span><span class="p">):</span>
+            <span class="nb">filter</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;opticalFlow&quot;</span><span class="p">])</span>
+            <span class="c1"># Delete old tracks</span>
+            <span class="k">if</span> <span class="nb">filter</span><span class="o">.</span><span class="n">should_be_deleted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_disappeared</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">filters</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="nb">filter</span><span class="p">)</span>
+
+        <span class="c1"># Associate detections to tracks</span>
+        <span class="n">matches</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">associate_detections_to_tracks</span><span class="p">(</span><span class="n">detections</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">filters</span><span class="p">,</span> <span class="n">classes</span><span class="p">)</span>
+
+        <span class="c1"># TODO check if necessary/ better option for unmatched detections than creating new tracks</span>
+        <span class="k">for</span> <span class="n">detection</span><span class="p">,</span> <span class="n">track</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">matches</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">track</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># sentinels that no match was found</span>
+                <span class="nb">filter</span> <span class="o">=</span> <span class="n">Filter</span><span class="p">(</span><span class="n">detections</span><span class="p">[</span><span class="n">detection</span><span class="p">],</span> <span class="n">classes</span><span class="p">[</span><span class="n">detection</span><span class="p">])</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">filters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">filter</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">filters</span><span class="p">[</span><span class="n">track</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
+                    <span class="n">detections</span><span class="p">[</span><span class="n">detection</span><span class="p">]</span>
+                <span class="p">)</span>  <span class="c1"># feed the filter the bounding box</span>
+
+        <span class="c1"># Return results</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">format_output</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="Tracker.associate_detections_to_tracks">
+<a class="viewcode-back" href="../../pipeline.html#pipeline.tracker.Tracker.associate_detections_to_tracks">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">associate_detections_to_tracks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">detections</span><span class="p">,</span> <span class="n">filters</span><span class="p">,</span> <span class="n">classes</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Associates detections to tracks via Hungarian algorithm.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            detections (np.ndarray): Detection boxes.</span>
+<span class="sd">            filters (list[Filter]): Active track filters.</span>
+<span class="sd">            classes (list): Class indices for detections.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            np.ndarray: Match indices or None for unmatched.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">matches</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">detections</span><span class="p">),</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="c1"># if no tracks: no matches, all detections unmatched</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">filters</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">detections</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">matches</span>
+
+        <span class="n">cost_matrix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calculate_cost_matrix</span><span class="p">(</span><span class="n">detections</span><span class="p">,</span> <span class="n">filters</span><span class="p">,</span> <span class="n">classes</span><span class="p">)</span>
+        <span class="n">detections</span><span class="p">,</span> <span class="n">tracks</span> <span class="o">=</span> <span class="n">linear_sum_assignment</span><span class="p">(</span><span class="n">cost_matrix</span><span class="p">)</span>
+
+        <span class="n">valid</span> <span class="o">=</span> <span class="n">cost_matrix</span><span class="p">[</span><span class="n">detections</span><span class="p">,</span> <span class="n">tracks</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">iou_threshold</span>
+        <span class="n">matches</span><span class="p">[</span><span class="n">detections</span><span class="p">[</span><span class="n">valid</span><span class="p">]]</span> <span class="o">=</span> <span class="n">tracks</span><span class="p">[</span><span class="n">valid</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">matches</span></div>
+
+
+<div class="viewcode-block" id="Tracker.calculate_cost_matrix">
+<a class="viewcode-back" href="../../pipeline.html#pipeline.tracker.Tracker.calculate_cost_matrix">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">calculate_cost_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">detections</span><span class="p">,</span> <span class="n">tracks</span><span class="p">,</span> <span class="n">classes</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Computes cost matrix combining IOU and class mismatch.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            detections (np.ndarray): Detection boxes.</span>
+<span class="sd">            tracks (list[Filter]): Existing track filters.</span>
+<span class="sd">            classes (list): Class indices.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            np.ndarray: Cost matrix (num_detections x num_tracks).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Convert to arrays</span>
+        <span class="n">trk_states</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">t</span><span class="o">.</span><span class="n">get_state</span><span class="p">()</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">tracks</span><span class="p">])</span>  <span class="c1"># shape: (T, 4)</span>
+
+        <span class="c1"># Detection box corners</span>
+        <span class="n">x1_min</span> <span class="o">=</span> <span class="n">detections</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">detections</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span>
+        <span class="n">y1_min</span> <span class="o">=</span> <span class="n">detections</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">detections</span><span class="p">[:,</span> <span class="mi">3</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span>
+        <span class="n">x1_max</span> <span class="o">=</span> <span class="n">detections</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">detections</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span>
+        <span class="n">y1_max</span> <span class="o">=</span> <span class="n">detections</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">detections</span><span class="p">[:,</span> <span class="mi">3</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span>
+
+        <span class="c1"># Track box corners</span>
+        <span class="n">x2_min</span> <span class="o">=</span> <span class="n">trk_states</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">trk_states</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span>
+        <span class="n">y2_min</span> <span class="o">=</span> <span class="n">trk_states</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">trk_states</span><span class="p">[:,</span> <span class="mi">3</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span>
+        <span class="n">x2_max</span> <span class="o">=</span> <span class="n">trk_states</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">trk_states</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span>
+        <span class="n">y2_max</span> <span class="o">=</span> <span class="n">trk_states</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">trk_states</span><span class="p">[:,</span> <span class="mi">3</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span>
+
+        <span class="c1"># Pairwise intersection</span>
+        <span class="n">inter_x_min</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">x1_min</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">],</span> <span class="n">x2_min</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:])</span>
+        <span class="n">inter_y_min</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">y1_min</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">],</span> <span class="n">y2_min</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:])</span>
+        <span class="n">inter_x_max</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">x1_max</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">],</span> <span class="n">x2_max</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:])</span>
+        <span class="n">inter_y_max</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">y1_max</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">],</span> <span class="n">y2_max</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:])</span>
+        <span class="n">inter_w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">inter_x_max</span> <span class="o">-</span> <span class="n">inter_x_min</span><span class="p">)</span>
+        <span class="n">inter_h</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">inter_y_max</span> <span class="o">-</span> <span class="n">inter_y_min</span><span class="p">)</span>
+        <span class="n">inter_area</span> <span class="o">=</span> <span class="n">inter_w</span> <span class="o">*</span> <span class="n">inter_h</span>  <span class="c1"># shape: (D, T)</span>
+
+        <span class="c1"># Union areas</span>
+        <span class="n">area_det</span> <span class="o">=</span> <span class="n">detections</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="n">detections</span><span class="p">[:,</span> <span class="mi">3</span><span class="p">]</span>  <span class="c1"># (D,)</span>
+        <span class="n">area_trk</span> <span class="o">=</span> <span class="n">trk_states</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="n">trk_states</span><span class="p">[:,</span> <span class="mi">3</span><span class="p">]</span>  <span class="c1"># (T,)</span>
+        <span class="n">union</span> <span class="o">=</span> <span class="n">area_det</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">+</span> <span class="n">area_trk</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span> <span class="o">-</span> <span class="n">inter_area</span>
+        <span class="n">iou</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">union</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="n">inter_area</span> <span class="o">/</span> <span class="n">union</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>  <span class="c1"># (D, T)</span>
+
+        <span class="c1"># IoU cost</span>
+        <span class="n">iou_cost</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">iou</span>
+
+        <span class="c1"># Class-mismatch cost</span>
+        <span class="n">det_cls</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">classes</span><span class="p">)[:,</span> <span class="kc">None</span><span class="p">]</span>  <span class="c1"># (D, 1)</span>
+        <span class="n">trk_cls</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">t</span><span class="o">.</span><span class="n">class_id</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">tracks</span><span class="p">])[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span>  <span class="c1"># (1, T)</span>
+        <span class="n">class_cost</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">det_cls</span> <span class="o">==</span> <span class="n">trk_cls</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">1000.0</span><span class="p">)</span>  <span class="c1"># (D, T)</span>
+
+        <span class="c1"># Combined cost matrix</span>
+        <span class="n">cost_matrix</span> <span class="o">=</span> <span class="n">iou_cost</span> <span class="o">+</span> <span class="n">class_cost</span>
+        <span class="k">return</span> <span class="n">cost_matrix</span></div>
+
+
+<div class="viewcode-block" id="Tracker.format_output">
+<a class="viewcode-back" href="../../pipeline.html#pipeline.tracker.Tracker.format_output">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">format_output</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Formats track filters into output dictionary.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            dict: Keys: tracks, trackVelocities, trackAge, trackClasses, trackIds.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">trackInfo</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filters</span><span class="p">),</span> <span class="mi">9</span><span class="p">),</span> <span class="kc">None</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="nb">filter</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filters</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">filter</span><span class="o">.</span><span class="n">is_valid</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">min_hits</span><span class="p">):</span>
+                <span class="n">trackInfo</span><span class="p">[</span><span class="n">idx</span><span class="p">,</span> <span class="mi">0</span><span class="p">:</span><span class="mi">6</span><span class="p">]</span> <span class="o">=</span> <span class="nb">filter</span><span class="o">.</span><span class="n">x</span>
+                <span class="n">trackInfo</span><span class="p">[</span><span class="n">idx</span><span class="p">,</span> <span class="mi">6</span><span class="p">]</span> <span class="o">=</span> <span class="nb">filter</span><span class="o">.</span><span class="n">age</span>
+                <span class="n">trackInfo</span><span class="p">[</span><span class="n">idx</span><span class="p">,</span> <span class="mi">7</span><span class="p">]</span> <span class="o">=</span> <span class="nb">filter</span><span class="o">.</span><span class="n">class_id</span>
+                <span class="n">trackInfo</span><span class="p">[</span><span class="n">idx</span><span class="p">,</span> <span class="mi">8</span><span class="p">]</span> <span class="o">=</span> <span class="nb">filter</span><span class="o">.</span><span class="n">track_id</span>
+
+        <span class="n">validTracks</span> <span class="o">=</span> <span class="n">trackInfo</span><span class="p">[</span><span class="n">trackInfo</span><span class="p">[:,</span> <span class="mi">8</span><span class="p">]</span> <span class="o">!=</span> <span class="kc">None</span><span class="p">]</span>
         <span class="k">return</span> <span class="p">{</span>
-            <span class="s2">&quot;tracks&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
-            <span class="s2">&quot;trackVelocities&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
-            <span class="s2">&quot;trackAge&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
-            <span class="s2">&quot;trackClasses&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
-            <span class="s2">&quot;trackIds&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s2">&quot;tracks&quot;</span><span class="p">:</span> <span class="n">validTracks</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">:</span><span class="mi">4</span><span class="p">],</span>
+            <span class="s2">&quot;trackVelocities&quot;</span><span class="p">:</span> <span class="n">validTracks</span><span class="p">[:,</span> <span class="mi">4</span><span class="p">:</span><span class="mi">6</span><span class="p">],</span>
+            <span class="s2">&quot;trackAge&quot;</span><span class="p">:</span> <span class="n">validTracks</span><span class="p">[:,</span> <span class="mi">6</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
+            <span class="s2">&quot;trackClasses&quot;</span><span class="p">:</span> <span class="n">validTracks</span><span class="p">[:,</span> <span class="mi">7</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
+            <span class="s2">&quot;trackIds&quot;</span><span class="p">:</span> <span class="n">validTracks</span><span class="p">[:,</span> <span class="mi">8</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
         <span class="p">}</span></div>
 </div>
 

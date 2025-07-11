@@ -114,7 +114,25 @@
 <dl class="py method">
 <dt class="sig sig-object py" id="pipeline.detector.Detector.step">
 <span class="sig-name descname"><span class="pre">step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipeline/detector.html#Detector.step"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipeline.detector.Detector.step" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Runs the YOLO model on the input image to detect players.
+:param data: Dictionary with keys:</p>
+<blockquote>
+<div><p>image (np.ndarray): BGR input frame.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><dl class="simple">
+<dt>Contains:</dt><dd><p>detections (np.ndarray): Array of bounding boxes in xywh format.
+classes (np.ndarray): Array of class indices for each detection.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pipeline.detector.Detector.stop">
@@ -138,7 +156,24 @@
 <dl class="py method">
 <dt class="sig sig-object py" id="pipeline.opticalflow.OpticalFlow.step">
 <span class="sig-name descname"><span class="pre">step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipeline/opticalflow.html#OpticalFlow.step"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipeline.opticalflow.OpticalFlow.step" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Computes optical flow between frames using Lucas-Kanade.
+:param data: Dictionary with keys:</p>
+<blockquote>
+<div><p>image (np.ndarray): BGR input frame.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><dl class="simple">
+<dt>Contains:</dt><dd><p>opticalFlow (np.ndarray): Median flow vector.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pipeline.opticalflow.OpticalFlow.stop">
@@ -155,19 +190,145 @@
 <em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pipeline.shirtClassifier.</span></span><span class="sig-name descname"><span class="pre">ShirtClassifier</span></span><a class="reference internal" href="_modules/pipeline/shirtClassifier.html#ShirtClassifier"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipeline.shirtClassifier.ShirtClassifier" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <dl class="py method">
+<dt class="sig sig-object py" id="pipeline.shirtClassifier.ShirtClassifier.generate_translation_layer">
+<span class="sig-name descname"><span class="pre">generate_translation_layer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">labels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipeline/shirtClassifier.html#ShirtClassifier.generate_translation_layer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipeline.shirtClassifier.ShirtClassifier.generate_translation_layer" title="Link to this definition"></a></dt>
+<dd><p>Builds a translation mapping from raw cluster labels to standardized class order.
+:param labels: Raw cluster labels.
+:type labels: np.ndarray</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipeline.shirtClassifier.ShirtClassifier.get_main_team_color">
+<span class="sig-name descname"><span class="pre">get_main_team_color</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">players_indices</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">torso_means</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span></span></span><a class="reference internal" href="_modules/pipeline/shirtClassifier.html#ShirtClassifier.get_main_team_color"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipeline.shirtClassifier.ShirtClassifier.get_main_team_color" title="Link to this definition"></a></dt>
+<dd><p>Determines the average BGR color of a team based on LAB torso colors.
+:param players_indices: Boolean mask or array of indices for players in the team.
+:type players_indices: np.ndarray
+:param torso_means: Array of shape (n_samples, 3) with LAB mean colors.
+:type torso_means: np.ndarray</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Average BGR color for the team.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>tuple of int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipeline.shirtClassifier.ShirtClassifier.get_mean_lab_color">
+<span class="sig-name descname"><span class="pre">get_mean_lab_color</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">img</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span></span></span><a class="reference internal" href="_modules/pipeline/shirtClassifier.html#ShirtClassifier.get_mean_lab_color"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipeline.shirtClassifier.ShirtClassifier.get_mean_lab_color" title="Link to this definition"></a></dt>
+<dd><p>Calculates the mean LAB color of the input image.
+:param img: Input image in BGR format.
+:type img: np.ndarray</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Mean LAB color channels.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>tuple of uint8</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipeline.shirtClassifier.ShirtClassifier.get_players_boxes">
+<span class="sig-name descname"><span class="pre">get_players_boxes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipeline/shirtClassifier.html#ShirtClassifier.get_players_boxes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipeline.shirtClassifier.ShirtClassifier.get_players_boxes" title="Link to this definition"></a></dt>
+<dd><p>Extracts upper body images for each tracked player.
+:param data: Dictionary with keys:</p>
+<blockquote>
+<div><p>image (np.ndarray): Full frame in BGR.
+tracks (list of tuples): Bounding boxes (x, y, w, h).</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Cropped torso images for each player.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>list of np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipeline.shirtClassifier.ShirtClassifier.mask_img">
+<span class="sig-name descname"><span class="pre">mask_img</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">img</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="_modules/pipeline/shirtClassifier.html#ShirtClassifier.mask_img"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipeline.shirtClassifier.ShirtClassifier.mask_img" title="Link to this definition"></a></dt>
+<dd><p>Masks out green pixels representing the pitch background in the input BGR image.
+:param img: Input image in BGR format.
+:type img: np.ndarray</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Cleansed image with green pixels removed.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="pipeline.shirtClassifier.ShirtClassifier.start">
 <span class="sig-name descname"><span class="pre">start</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipeline/shirtClassifier.html#ShirtClassifier.start"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipeline.shirtClassifier.ShirtClassifier.start" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Initializes the KMeans clusterer.
+:param data: Unused input data dictionary.
+:type data: dict</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pipeline.shirtClassifier.ShirtClassifier.step">
 <span class="sig-name descname"><span class="pre">step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipeline/shirtClassifier.html#ShirtClassifier.step"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipeline.shirtClassifier.ShirtClassifier.step" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Processes a single frame to classify player shirts into two teams.
+:param data: Dictionary containing:</p>
+<blockquote>
+<div><p>image (np.ndarray): Frame in BGR format.
+tracks (list of tuples): Bounding boxes (x, y, w, h) for detected players.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><dl class="simple">
+<dt>Contains:</dt><dd><p>teamAColor (tuple of int): BGR color for Team A.
+teamBColor (tuple of int): BGR color for Team B.
+teamClasses (list of int): Class label per track (0=Rest, 1=Team A, 2=Team B).</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pipeline.shirtClassifier.ShirtClassifier.stop">
 <span class="sig-name descname"><span class="pre">stop</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipeline/shirtClassifier.html#ShirtClassifier.stop"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipeline.shirtClassifier.ShirtClassifier.stop" title="Link to this definition"></a></dt>
 <dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipeline.shirtClassifier.ShirtClassifier.translate_predictions">
+<span class="sig-name descname"><span class="pre">translate_predictions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">labels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="_modules/pipeline/shirtClassifier.html#ShirtClassifier.translate_predictions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipeline.shirtClassifier.ShirtClassifier.translate_predictions" title="Link to this definition"></a></dt>
+<dd><p>Remaps cluster labels to standardized classes: 0=Rest, 1=Team A, 2=Team B.
+:param labels: Raw cluster labels.
+:type labels: np.ndarray</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Remapped labels with values 0, 1, or 2.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
 
 </dd></dl>
 
@@ -178,6 +339,80 @@
 <dt class="sig sig-object py" id="pipeline.tracker.Filter">
 <em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pipeline.tracker.</span></span><span class="sig-name descname"><span class="pre">Filter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">z</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cls</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipeline/tracker.html#Filter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipeline.tracker.Filter" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pipeline.tracker.Filter.get_state">
+<span class="sig-name descname"><span class="pre">get_state</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipeline/tracker.html#Filter.get_state"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipeline.tracker.Filter.get_state" title="Link to this definition"></a></dt>
+<dd><p>Gets current bounding box state.
+:returns: Current state [x, y, w, h].
+:rtype: np.ndarray</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipeline.tracker.Filter.get_velocity">
+<span class="sig-name descname"><span class="pre">get_velocity</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipeline/tracker.html#Filter.get_velocity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipeline.tracker.Filter.get_velocity" title="Link to this definition"></a></dt>
+<dd><p>Gets current velocity.
+:returns: Current velocity [vx, vy].
+:rtype: np.ndarray</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipeline.tracker.Filter.is_valid">
+<span class="sig-name descname"><span class="pre">is_valid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">min_hits</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipeline/tracker.html#Filter.is_valid"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipeline.tracker.Filter.is_valid" title="Link to this definition"></a></dt>
+<dd><p>Checks if track is confirmed based on hits.
+:param min_hits: Minimum hits to confirm.
+:type min_hits: int</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True if hits &gt;= min_hits.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipeline.tracker.Filter.predict">
+<span class="sig-name descname"><span class="pre">predict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">opt_flow</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipeline/tracker.html#Filter.predict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipeline.tracker.Filter.predict" title="Link to this definition"></a></dt>
+<dd><p>Predicts the next state with optical flow as control.
+:param opt_flow: Optical flow vector (dx, dy).
+:type opt_flow: tuple</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipeline.tracker.Filter.should_be_deleted">
+<span class="sig-name descname"><span class="pre">should_be_deleted</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">max_age</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipeline/tracker.html#Filter.should_be_deleted"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipeline.tracker.Filter.should_be_deleted" title="Link to this definition"></a></dt>
+<dd><p>Determines if track should be deleted due to age.
+:param max_age: Max frames without updates.
+:type max_age: int</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True if track should be deleted.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipeline.tracker.Filter.update">
+<span class="sig-name descname"><span class="pre">update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">z</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipeline/tracker.html#Filter.update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipeline.tracker.Filter.update" title="Link to this definition"></a></dt>
+<dd><p>Updates state with a new measurement.
+:param z: Measurement [x, y, w, h].
+:type z: np.ndarray</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
@@ -185,19 +420,106 @@
 <em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pipeline.tracker.</span></span><span class="sig-name descname"><span class="pre">Tracker</span></span><a class="reference internal" href="_modules/pipeline/tracker.html#Tracker"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipeline.tracker.Tracker" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <dl class="py method">
+<dt class="sig sig-object py" id="pipeline.tracker.Tracker.associate_detections_to_tracks">
+<span class="sig-name descname"><span class="pre">associate_detections_to_tracks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">detections</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filters</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">classes</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipeline/tracker.html#Tracker.associate_detections_to_tracks"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipeline.tracker.Tracker.associate_detections_to_tracks" title="Link to this definition"></a></dt>
+<dd><p>Associates detections to tracks via Hungarian algorithm.
+:param detections: Detection boxes.
+:type detections: np.ndarray
+:param filters: Active track filters.
+:type filters: list[Filter]
+:param classes: Class indices for detections.
+:type classes: list</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Match indices or None for unmatched.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipeline.tracker.Tracker.calculate_cost_matrix">
+<span class="sig-name descname"><span class="pre">calculate_cost_matrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">detections</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tracks</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">classes</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipeline/tracker.html#Tracker.calculate_cost_matrix"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipeline.tracker.Tracker.calculate_cost_matrix" title="Link to this definition"></a></dt>
+<dd><p>Computes cost matrix combining IOU and class mismatch.
+:param detections: Detection boxes.
+:type detections: np.ndarray
+:param tracks: Existing track filters.
+:type tracks: list[Filter]
+:param classes: Class indices.
+:type classes: list</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Cost matrix (num_detections x num_tracks).</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipeline.tracker.Tracker.format_output">
+<span class="sig-name descname"><span class="pre">format_output</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipeline/tracker.html#Tracker.format_output"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipeline.tracker.Tracker.format_output" title="Link to this definition"></a></dt>
+<dd><p>Formats track filters into output dictionary.
+:returns: Keys: tracks, trackVelocities, trackAge, trackClasses, trackIds.
+:rtype: dict</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="pipeline.tracker.Tracker.start">
 <span class="sig-name descname"><span class="pre">start</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipeline/tracker.html#Tracker.start"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipeline.tracker.Tracker.start" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Placeholder for start. No operation.
+:param data: Input data.
+:type data: dict</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pipeline.tracker.Tracker.step">
 <span class="sig-name descname"><span class="pre">step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipeline/tracker.html#Tracker.step"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipeline.tracker.Tracker.step" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Processes detections and updates tracks.
+:param data: Contains:</p>
+<blockquote>
+<div><p>detections (list): Detection boxes [x,y,w,h].
+classes (list): Class indices.
+opticalFlow (tuple): Optical flow vector (dx, dy).</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><dl class="simple">
+<dt>Contains:</dt><dd><p>tracks (np.ndarray): Bounding boxes [x,y,w,h].
+trackVelocities (np.ndarray): Velocities [vx,vy].
+trackAge (list): Ages of tracks.
+trackClasses (list): Classes of tracks.
+trackIds (list): Track identifiers.</p>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pipeline.tracker.Tracker.stop">
 <span class="sig-name descname"><span class="pre">stop</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipeline/tracker.html#Tracker.stop"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipeline.tracker.Tracker.stop" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Clears all tracks.
+:param data: Input data.
+:type data: dict</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
 
 </dd></dl>
 

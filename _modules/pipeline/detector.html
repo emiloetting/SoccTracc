@@ -93,49 +93,49 @@
            <div itemprop="articleBody">
              
   <h1>Source code for pipeline.detector</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">ultralytics</span><span class="w"> </span><span class="kn">import</span> <span class="n">YOLO</span><span class="p">,</span> <span class="n">settings</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="c1"># Disable analytics and crash reporting</span>
+<span class="n">settings</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s2">&quot;sync&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">})</span>
+
+
 <div class="viewcode-block" id="Detector">
 <a class="viewcode-back" href="../../pipeline.html#pipeline.detector.Detector">[docs]</a>
-<span></span><span class="k">class</span><span class="w"> </span><span class="nc">Detector</span><span class="p">:</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Detector</span><span class="p">:</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;Detector&quot;</span>  <span class="c1"># Do not change the name of the module as otherwise recording replay would break!</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">YOLO</span><span class="p">(</span><span class="s2">&quot;yolov8m-football.pt&quot;</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Detector.start">
 <a class="viewcode-back" href="../../pipeline.html#pipeline.detector.Detector.start">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
-        <span class="c1"># TODO: Implement start up procedure of the module</span>
         <span class="k">pass</span></div>
 
 
 <div class="viewcode-block" id="Detector.stop">
 <a class="viewcode-back" href="../../pipeline.html#pipeline.detector.Detector.stop">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">stop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
-        <span class="c1"># TODO: Implement shut down procedure of the module</span>
         <span class="k">pass</span></div>
 
 
 <div class="viewcode-block" id="Detector.step">
 <a class="viewcode-back" href="../../pipeline.html#pipeline.detector.Detector.step">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
-        <span class="c1"># TODO: Implement processing of a single frame</span>
-        <span class="c1"># The task of the detector is to detect the ball, the goal keepers, the players and the referees if visible.</span>
-        <span class="c1"># A bounding box needs to be defined for each detected object including the objects center position (X,Y) and its width and height (W, H)</span>
-        <span class="c1"># You can return an arbitrary number of objects</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Runs the YOLO model on the input image to detect players.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            data (dict): Dictionary with keys:</span>
+<span class="sd">                image (np.ndarray): BGR input frame.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            dict: Contains:</span>
+<span class="sd">                detections (np.ndarray): Array of bounding boxes in xywh format.</span>
+<span class="sd">                classes (np.ndarray): Array of class indices for each detection.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;image&quot;</span><span class="p">],</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">xywh</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">results</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">boxes</span><span class="o">.</span><span class="n">xywh</span><span class="p">)</span>
+        <span class="n">classes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">results</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">boxes</span><span class="o">.</span><span class="n">cls</span><span class="p">)</span>
 
-        <span class="c1"># Note: You can access data[&quot;image&quot;] to receive the current image</span>
-        <span class="c1"># Return a dictionary with detections and classes</span>
-        <span class="c1">#</span>
-        <span class="c1"># Detections must be a Nx4 NumPy Tensor, one 4-dimensional vector per detection</span>
-        <span class="c1"># The detection vector itself is encoded as (X, Y, W, H), so X and Y coordinate first, then width and height of each detection box.</span>
-        <span class="c1"># X and Y coordinates are the center point of the object, so the bounding box is drawn from (X - W/2, Y - H/2) to (X + W/2, Y + H/2)</span>
-        <span class="c1">#</span>
-        <span class="c1"># Classes must be Nx1 NumPy Tensor, one scalar entryx per detection</span>
-        <span class="c1"># For each corresponding detection, the following mapping must be used</span>
-        <span class="c1">#   0: Ball</span>
-        <span class="c1">#   1: GoalKeeper</span>
-        <span class="c1">#   2: Player</span>
-        <span class="c1">#   3: Referee</span>
-
-        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;detections&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;classes&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">}</span></div>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;detections&quot;</span><span class="p">:</span> <span class="n">xywh</span><span class="p">,</span> <span class="s2">&quot;classes&quot;</span><span class="p">:</span> <span class="n">classes</span><span class="p">}</span></div>
 </div>
 
 </pre></div>

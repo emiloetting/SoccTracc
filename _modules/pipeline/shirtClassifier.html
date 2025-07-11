@@ -93,41 +93,236 @@
            <div itemprop="articleBody">
              
   <h1>Source code for pipeline.shirtClassifier</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">cv2</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">cv</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.neighbors</span><span class="w"> </span><span class="kn">import</span> <span class="n">KNeighborsClassifier</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sklearn.cluster</span><span class="w"> </span><span class="kn">import</span> <span class="n">KMeans</span>
+
+
 <div class="viewcode-block" id="ShirtClassifier">
 <a class="viewcode-back" href="../../pipeline.html#pipeline.shirtClassifier.ShirtClassifier">[docs]</a>
-<span></span><span class="k">class</span><span class="w"> </span><span class="nc">ShirtClassifier</span><span class="p">:</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">ShirtClassifier</span><span class="p">:</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;Shirt Classifier&quot;</span>  <span class="c1"># Do not change the name of the module as otherwise recording replay would break!</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_frame</span> <span class="o">=</span> <span class="mi">0</span>
 
 <div class="viewcode-block" id="ShirtClassifier.start">
 <a class="viewcode-back" href="../../pipeline.html#pipeline.shirtClassifier.ShirtClassifier.start">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
-        <span class="c1"># TODO: Implement start up procedure of the module</span>
-        <span class="k">pass</span></div>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initializes the KMeans clusterer.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            data (dict): Unused input data dictionary.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">clusterer</span> <span class="o">=</span> <span class="n">KMeans</span><span class="p">(</span><span class="n">n_clusters</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">max_iter</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="ShirtClassifier.stop">
 <a class="viewcode-back" href="../../pipeline.html#pipeline.shirtClassifier.ShirtClassifier.stop">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">stop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
-        <span class="c1"># TODO: Implement shut down procedure of the module</span>
         <span class="k">pass</span></div>
 
 
 <div class="viewcode-block" id="ShirtClassifier.step">
 <a class="viewcode-back" href="../../pipeline.html#pipeline.shirtClassifier.ShirtClassifier.step">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
-        <span class="c1"># TODO: Implement processing of a current frame list</span>
-        <span class="c1"># The task of the shirt classifier module is to identify the two teams based on their shirt color and to assign each player to one of the two teams</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Processes a single frame to classify player shirts into two teams.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            data (dict): Dictionary containing:</span>
+<span class="sd">                image (np.ndarray): Frame in BGR format.</span>
+<span class="sd">                tracks (list of tuples): Bounding boxes (x, y, w, h) for detected players.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            dict: Contains:</span>
+<span class="sd">                teamAColor (tuple of int): BGR color for Team A.</span>
+<span class="sd">                teamBColor (tuple of int): BGR color for Team B.</span>
+<span class="sd">                teamClasses (list of int): Class label per track (0=Rest, 1=Team A, 2=Team B).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_frame</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="c1"># Get images of detected objetcs</span>
+        <span class="n">player_imgs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_players_boxes</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="n">lst_torsos_test</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">lst_torsos_train</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># Reduce Image features by calculating mean color (BGR) of image</span>
+        <span class="k">for</span> <span class="n">img</span> <span class="ow">in</span> <span class="n">player_imgs</span><span class="p">:</span>
+            <span class="c1"># Mask out green and black pixels</span>
+            <span class="n">masked_img</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mask_img</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
+            <span class="c1"># Calculate mean color of torso image (LAB) and append to list</span>
+            <span class="n">mean_lab</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_mean_lab_color</span><span class="p">(</span><span class="n">masked_img</span><span class="p">)</span>
+            <span class="n">lst_torsos_test</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mean_lab</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_frame</span> <span class="o">&lt;</span> <span class="mi">9</span><span class="p">:</span>  <span class="c1"># Collect data for training</span>
+                <span class="n">lst_torsos_train</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">mean_lab</span><span class="p">)</span>
+        <span class="n">arr_torsos_test</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">lst_torsos_test</span><span class="p">)</span>
 
-        <span class="c1"># Note: You can access data[&quot;image&quot;] and data[&quot;tracks&quot;] to receive the current image as well as the current track list</span>
-        <span class="c1"># You must return a dictionary with the given fields:</span>
-        <span class="c1">#       &quot;teamAColor&quot;:       A 3-tuple (B, G, R) containing the blue, green and red channel values (between 0 and 255) for team A</span>
-        <span class="c1">#       &quot;teamBColor&quot;:       A 3-tuple (B, G, R) containing the blue, green and red channel values (between 0 and 255) for team B</span>
-        <span class="c1">#       &quot;teamClasses&quot;       A list with an integer class for each track according to the following mapping:</span>
-        <span class="c1">#           0: Team not decided or not a player (e.g. ball, goal keeper, referee)</span>
-        <span class="c1">#           1: Player belongs to team A</span>
-        <span class="c1">#           2: Player belongs to team B</span>
-        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;teamAColor&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;teamBColor&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;teamClasses&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">}</span></div>
+        <span class="c1"># Set data to return before clustering is completed</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_frame</span> <span class="o">&lt;</span> <span class="mi">8</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">{</span>
+                <span class="s2">&quot;teamAColor&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">255</span><span class="p">),</span>
+                <span class="s2">&quot;teamBColor&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
+                <span class="s2">&quot;teamClasses&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;tracks&quot;</span><span class="p">]),</span>  <span class="c1"># fake labels</span>
+            <span class="p">}</span>
+
+        <span class="c1"># Frame 8: clustering takes place</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_frame</span> <span class="o">==</span> <span class="mi">8</span><span class="p">:</span>
+            <span class="c1"># TORSOS HERE ALREADY IN LAB</span>
+            <span class="c1"># Build cluster</span>
+            <span class="n">arr_torsos_train</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">lst_torsos_train</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">clusterer</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">arr_torsos_train</span><span class="p">)</span>
+
+            <span class="c1"># Remap labels to 0, 1, 2 (0 = Rest, 1 = Team A, 2 = Team B)</span>
+            <span class="n">predictions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">clusterer</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">arr_torsos_train</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">generate_translation_layer</span><span class="p">(</span><span class="n">predictions</span><span class="p">)</span>
+            <span class="n">labels</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">translate_predictions</span><span class="p">(</span><span class="n">predictions</span><span class="p">)</span>
+
+            <span class="c1"># Last step: Determine Team color</span>
+            <span class="c1"># Will be cached, not calcuted every frame</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">team_a_color</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_main_team_color</span><span class="p">(</span>
+                <span class="n">labels</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="n">arr_torsos_train</span>
+            <span class="p">)</span>  <span class="c1"># method returns color in BGR</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">team_b_color</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_main_team_color</span><span class="p">(</span><span class="n">labels</span> <span class="o">==</span> <span class="mi">2</span><span class="p">,</span> <span class="n">arr_torsos_train</span><span class="p">)</span>
+
+        <span class="n">predictions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">clusterer</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">arr_torsos_test</span><span class="p">)</span>  <span class="c1"># predictions[valid_mask]</span>
+        <span class="n">labels</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">translate_predictions</span><span class="p">(</span><span class="n">predictions</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;teamAColor&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">team_a_color</span><span class="p">,</span>
+            <span class="s2">&quot;teamBColor&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">team_b_color</span><span class="p">,</span>
+            <span class="s2">&quot;teamClasses&quot;</span><span class="p">:</span> <span class="n">labels</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
+        <span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="ShirtClassifier.get_players_boxes">
+<a class="viewcode-back" href="../../pipeline.html#pipeline.shirtClassifier.ShirtClassifier.get_players_boxes">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_players_boxes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>  <span class="c1"># boxes contain torsos</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Extracts upper body images for each tracked player.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            data (dict): Dictionary with keys:</span>
+<span class="sd">                image (np.ndarray): Full frame in BGR.</span>
+<span class="sd">                tracks (list of tuples): Bounding boxes (x, y, w, h).</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            list of np.ndarray: Cropped torso images for each player.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">img</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;image&quot;</span><span class="p">]</span>
+        <span class="n">player_boxes</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;tracks&quot;</span><span class="p">]</span>
+        <span class="n">player_imgs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">player_box</span> <span class="ow">in</span> <span class="n">player_boxes</span><span class="p">:</span>
+            <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">h</span> <span class="o">=</span> <span class="n">player_box</span>
+            <span class="n">x1</span><span class="p">,</span> <span class="n">y1</span><span class="p">,</span> <span class="n">x2</span><span class="p">,</span> <span class="n">y2</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="nb">int</span><span class="p">(</span><span class="n">x</span> <span class="o">-</span> <span class="n">w</span> <span class="o">/</span> <span class="mi">2</span><span class="p">),</span>
+                <span class="nb">int</span><span class="p">(</span><span class="n">y</span> <span class="o">-</span> <span class="n">h</span> <span class="o">/</span> <span class="mi">4</span><span class="p">),</span>
+                <span class="nb">int</span><span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="n">w</span> <span class="o">/</span> <span class="mi">2</span><span class="p">),</span>
+                <span class="nb">int</span><span class="p">(</span><span class="n">y</span><span class="p">),</span>
+            <span class="p">)</span>  <span class="c1"># just take y as min height because torso</span>
+            <span class="n">cutout</span> <span class="o">=</span> <span class="n">img</span><span class="p">[</span><span class="n">y1</span><span class="p">:</span><span class="n">y2</span><span class="p">,</span> <span class="n">x1</span><span class="p">:</span><span class="n">x2</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">cutout</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">player_imgs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">player_imgs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cutout</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">player_imgs</span></div>
+
+
+<div class="viewcode-block" id="ShirtClassifier.generate_translation_layer">
+<a class="viewcode-back" href="../../pipeline.html#pipeline.shirtClassifier.ShirtClassifier.generate_translation_layer">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">generate_translation_layer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">labels</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Builds a translation mapping from raw cluster labels to standardized class order.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            labels (np.ndarray): Raw cluster labels.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">bins</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">bincount</span><span class="p">(</span><span class="n">labels</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">translation</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">bins</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ShirtClassifier.translate_predictions">
+<a class="viewcode-back" href="../../pipeline.html#pipeline.shirtClassifier.ShirtClassifier.translate_predictions">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">translate_predictions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">labels</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Remaps cluster labels to standardized classes: 0=Rest, 1=Team A, 2=Team B.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            labels (np.ndarray): Raw cluster labels.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            np.ndarray: Remapped labels with values 0, 1, or 2.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">remap</span> <span class="o">=</span> <span class="n">labels</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">translation</span><span class="p">)):</span>
+            <span class="n">remap</span><span class="p">[</span><span class="n">labels</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">translation</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span> <span class="o">=</span> <span class="n">i</span>
+
+        <span class="k">return</span> <span class="n">remap</span></div>
+
+
+<div class="viewcode-block" id="ShirtClassifier.mask_img">
+<a class="viewcode-back" href="../../pipeline.html#pipeline.shirtClassifier.ShirtClassifier.mask_img">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">mask_img</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">img</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Masks out green pixels representing the pitch background in the input BGR image.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            img (np.ndarray): Input image in BGR format.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            np.ndarray: Cleansed image with green pixels removed.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">img</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">img</span> <span class="o">=</span> <span class="n">cv</span><span class="o">.</span><span class="n">cvtColor</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">cv</span><span class="o">.</span><span class="n">COLOR_BGR2HSV</span><span class="p">)</span>
+        <span class="c1"># Create a mask for green pixels</span>
+        <span class="n">greens</span> <span class="o">=</span> <span class="p">(</span><span class="n">img</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mi">32</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">img</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="mi">70</span><span class="p">)</span>
+        <span class="c1"># Apply the mask to the original image</span>
+        <span class="n">cleansed</span> <span class="o">=</span> <span class="n">img</span><span class="p">[</span><span class="o">~</span><span class="n">greens</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">cleansed</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">cleansed</span> <span class="o">=</span> <span class="n">cv</span><span class="o">.</span><span class="n">cvtColor</span><span class="p">(</span><span class="n">cleansed</span><span class="p">,</span> <span class="n">cv</span><span class="o">.</span><span class="n">COLOR_HSV2BGR</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">cleansed</span></div>
+
+
+<div class="viewcode-block" id="ShirtClassifier.get_mean_lab_color">
+<a class="viewcode-back" href="../../pipeline.html#pipeline.shirtClassifier.ShirtClassifier.get_mean_lab_color">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_mean_lab_color</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">img</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Calculates the mean LAB color of the input image.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            img (np.ndarray): Input image in BGR format.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple of uint8: Mean LAB color channels.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># If no &#39;colored&#39; pixel to be be collected: return green in LAB</span>
+        <span class="k">if</span> <span class="n">img</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">127</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">255</span><span class="p">])</span>
+
+        <span class="n">lab</span> <span class="o">=</span> <span class="n">cv</span><span class="o">.</span><span class="n">cvtColor</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">cv</span><span class="o">.</span><span class="n">COLOR_BGR2LAB</span><span class="p">)</span>
+
+        <span class="c1"># Calculate mean pixel color as float, ensure correct dtype</span>
+        <span class="n">mean_lab</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">lab</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">mean_lab</span></div>
+
+
+<div class="viewcode-block" id="ShirtClassifier.get_main_team_color">
+<a class="viewcode-back" href="../../pipeline.html#pipeline.shirtClassifier.ShirtClassifier.get_main_team_color">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_main_team_color</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">players_indices</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">torso_means</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Determines the average BGR color of a team based on LAB torso colors.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            players_indices (np.ndarray): Boolean mask or array of indices for players in the team.</span>
+<span class="sd">            torso_means (np.ndarray): Array of shape (n_samples, 3) with LAB mean colors.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            tuple of int: Average BGR color for the team.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">team_colors</span> <span class="o">=</span> <span class="n">torso_means</span><span class="p">[</span><span class="n">players_indices</span><span class="p">]</span>
+        <span class="n">team_color</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">team_colors</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span>
+        <span class="c1"># Reshape to 1x1 image with 3 channels to prepare for conversion with cv</span>
+        <span class="n">team_color</span> <span class="o">=</span> <span class="n">team_color</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+
+        <span class="c1"># Convert from LAB to BGR (Torsos are LAB)</span>
+        <span class="n">team_color</span> <span class="o">=</span> <span class="n">cv</span><span class="o">.</span><span class="n">cvtColor</span><span class="p">(</span><span class="n">team_color</span><span class="p">,</span> <span class="n">cv</span><span class="o">.</span><span class="n">COLOR_LAB2BGR</span><span class="p">)</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">team_color</span><span class="p">)</span></div>
 </div>
 
 </pre></div>
