@@ -130,6 +130,7 @@ class Filter:
         """
         return self.hits >= min_hits
 
+
 class Tracker:
     def __init__(self):
         self.name = "Tracker"  # Do not change the name of the module as otherwise recording replay would break!
