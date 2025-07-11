@@ -58,4 +58,3 @@ class OpticalFlow:
         self.last_frame = self.frame.copy()
 
         return {"opticalFlow": flow}
-
