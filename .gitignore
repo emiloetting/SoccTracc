@@ -6,3 +6,4 @@ __pycache__
 .faafo
 record/*
 videos/*
+pipeline/detector_models/*

@@ -1,14 +1,14 @@
 from ultralytics import YOLO, settings
 import numpy as np
+import os
+
 
 # Disable analytics and crash reporting
 settings.update({"sync": False})
-
-
 class Detector:
-    def __init__(self):
+    def __init__(self, model:str, cwd: str):
         self.name = "Detector"  # Do not change the name of the module as otherwise recording replay would break!
-        self.model = YOLO("yolov8m-football.pt")
+        self.model = YOLO(os.path.join(cwd, "pipeline","detector_models", model))
 
     def start(self, data):
         pass
