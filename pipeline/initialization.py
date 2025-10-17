@@ -115,8 +115,8 @@ class Initializer():
         """Downloads all required files for project to run. Includes security check using SHA256-hashes."""
         
         if not precheck_existence:
-            self.grab_model_on_absence("m")
-            self.grab_model_on_absence("n")
+            self.grab_model_on_absence("yolov8m-football.pt")
+            self.grab_model_on_absence("yolov8n-football.pt")
             self.grab_vids("all")
             return
         
