@@ -11,7 +11,7 @@ class Initializer():
         # separate temp dir for model downloads to avoid interfering with video temp
         self.cwd = cwd
         self.metas = metas
-        os.makedirs(self.temp_dir, exist_ok=True)
+        os.makedirs(os.path.join(self.cwd, "pipeline", "detector_models"), exist_ok=True)
 
     def grab_model_on_absence(self, model_type:str) -> None:
         """Downloads finetuned YOLO if model can not be found in project directory.
@@ -24,6 +24,7 @@ class Initializer():
             None"""
         
         # Prepare
+        os.makedirs(self.temp_dir, exist_ok=True)
         detector_dir = os.path.join(self.cwd, "pipeline", "detector_models")
         os.makedirs(detector_dir, exist_ok=True)
 
@@ -31,6 +32,7 @@ class Initializer():
 
         # download into a dedicated model temp directory
         download_path = os.path.join(self.temp_dir, model_type)
+        print(download_path)
         gdown.download(url=self.metas[model_type], 
                        output=download_path, 
                        quiet=True)
