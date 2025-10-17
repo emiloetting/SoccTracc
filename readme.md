@@ -38,7 +38,6 @@ But don't worry, per default, these files will automatically be collected on exe
 
 Note✏️: Ensure you set your working directory to the repo-clone  
 
-Once you collected the files, change `SYNC_DATA` to `False` in order to avoid auto-download on each execution.  
 By default, the smaller model will be used on video 3 as displayed in the demo-gif:  
 <p aling=center>
 <img width="1778" height="173" alt="image" src="https://github.com/user-attachments/assets/e2d6ac35-898c-464b-9769-fc96860d4888" />
